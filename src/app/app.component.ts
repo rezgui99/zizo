@@ -21,7 +21,7 @@ export class AppComponent {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
         // Masquer la sidebar sur certaines routes
-        const authPages = ['/auth/login', 'auth/register','/auth/forgot-password']; // adapte tes routes
+        const authPages = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']; 
         this.showSidebar = !authPages.includes(event.urlAfterRedirects);
       });
   }

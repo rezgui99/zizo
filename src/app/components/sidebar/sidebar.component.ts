@@ -20,6 +20,13 @@ export class SidebarComponent {
     });
   }
 
+  get isAdmin(): boolean {
+    return this.authService.isAdmin;
+  }
+
+  get isHR(): boolean {
+    return this.authService.isHR;
+  }
   logout(): void {
     if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
       this.authService.logout().subscribe();

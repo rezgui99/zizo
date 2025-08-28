@@ -42,12 +42,14 @@ export const routes: Routes = [
   { path: 'organigramme', component: OrganigrammeComponent, canActivate: [AuthGuard] },
   { path: 'employee-skills', component: EmployeeSkillsComponent, canActivate: [AuthGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'job-offers/create', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
+  { path: 'job-offer/create', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
+  { path: 'job-offer', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
+  { path: 'job-offer', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
   { path: 'admin/users-enhanced', component: EnhancedUserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   
   
   // Unauthorized page
-  { path: 'unauthorized', component: HomeComponent }, // You can create a dedicated UnauthorizedComponent
+  { path: 'unauthorized', loadComponent: () => import('./pages/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent) },
   
   { path: '**', redirectTo: '/home' }
 ];

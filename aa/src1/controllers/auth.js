@@ -136,9 +136,25 @@ const login = async (req, res) => {
       last_login_ip: req.ip || req.connection.remoteAddress
     });
     
+    // Récupérer les rôles de l'utilisateur
+    const userWithRoles = await User.findByPk(user.id, {
+      include: [{
+        model: db.Role,
+        as: 'roles',
+        through: { attributes: [] }
+      }]
+    });
+    
+    // Déterminer le rôle principal (prendre le premier rôle ou 'employee' par défaut)
+    const primaryRole = userWithRoles?.roles?.[0]?.name || 'employee';
+    const userResponse = {
+      ...user.toJSON(),
+      role: primaryRole
+    };
+    
     const token = generateToken(user.id);
 
-    res.json({ message: 'Connexion réussie', user: user.toJSON(), token });
+    res.json({ message: 'Connexion réussie', user: userResponse, token });
   } catch (error) {
     console.error('Erreur login:', error);
     res.status(500).json({ error: 'Erreur lors de la connexion' });

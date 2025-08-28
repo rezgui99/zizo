@@ -239,7 +239,7 @@ export class JobOfferComponent implements OnInit {
         
         // Rediriger vers la liste des offres après 2 secondes
         setTimeout(() => {
-          this.router.navigate(['/job-offers']);
+          this.router.navigate(['/home']);
         }, 2000);
       }, 1000);
     } else {

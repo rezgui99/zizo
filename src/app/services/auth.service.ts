@@ -25,7 +25,6 @@ export class AuthService {
 
   public currentUser$ = this.currentUserSubject.asObservable();
   public token$ = this.tokenSubject.asObservable();
-   isAdmin: boolean = false; 
 
   constructor(private http: HttpClient, private router: Router) {
     this.loadTokenFromStorage();
@@ -143,10 +142,36 @@ export class AuthService {
   }
 
   hasRole(role: string): boolean {
-    return this.currentUser?.role === role;
+    const user = this.currentUser;
+    if (!user) return false;
+    
+    // Si l'utilisateur a des rôles dans un tableau
+    if (Array.isArray(user.role)) {
+      return user.role.includes(role);
+    }
+    
+    // Si l'utilisateur a un rôle simple
+    return user.role === role;
   }
 
   hasAnyRole(roles: string[]): boolean {
-    return roles.includes(this.currentUser?.role || '');
+    const user = this.currentUser;
+    if (!user) return false;
+    
+    // Si l'utilisateur a des rôles dans un tableau
+    if (Array.isArray(user.role)) {
+      return roles.some(role => user.role.includes(role));
+    }
+    
+    // Si l'utilisateur a un rôle simple
+    return roles.includes(user.role || '');
+  }
+
+  get isAdmin(): boolean {
+    return this.hasRole('admin');
+  }
+
+  get isHR(): boolean {
+    return this.hasRole('hr') || this.hasRole('admin');
   }
 }
