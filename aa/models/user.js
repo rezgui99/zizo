@@ -13,22 +13,6 @@ module.exports = (sequelize, DataTypes) => {
         as: "roles",
       });
 
-      // Relations avec les autres entités (créateur)
-      User.hasMany(models.Skill, {
-        foreignKey: "created_by",
-        as: "createdSkills"
-      });
-
-      User.hasMany(models.JobDescription, {
-        foreignKey: "created_by",
-        as: "createdJobDescriptions"
-      });
-
-      User.hasMany(models.Employee, {
-        foreignKey: "created_by",
-        as: "createdEmployees"
-      });
-
       // Relations pour l'audit
       User.hasMany(models.AuditLog, {
         foreignKey: "user_id",
@@ -70,6 +54,7 @@ module.exports = (sequelize, DataTypes) => {
       delete values.password;
       delete values.resetPasswordToken;
       delete values.resetPasswordExpires;
+      delete values.emailVerificationToken;
       return values;
     }
   }

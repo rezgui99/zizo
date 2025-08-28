@@ -4,22 +4,23 @@ const bcrypt = require('bcryptjs');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
- 
+    // Hash le mot de passe avant l'insertion
+    const hashedPassword = await bcrypt.hash('admin123', 12);
     
-    
-   await queryInterface.bulkInsert("Users", [
-  {
-    username: "admin",
-    firstName: "Super",
-    lastName: "Admin",
-    email: "admin@matchnhire.com",
-    password: "admin123", 
-    isActive: true,
-    emailVerified: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }
-]);
+    await queryInterface.bulkInsert("Users", [
+      {
+        username: "admin",
+        firstName: "Super",
+        lastName: "Admin",
+        email: "admin@matchnhire.com",
+        password: hashedPassword, // Mot de passe hashé
+        isActive: true,
+        emailVerified: true,
+        login_attempts: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    ]);
 
     // Récupérer l'ID de l'utilisateur admin et du rôle admin
     const [adminUser] = await queryInterface.sequelize.query(

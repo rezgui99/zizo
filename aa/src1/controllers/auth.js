@@ -24,15 +24,7 @@ transporter.verify((err, success) => {
 });
 
 // --- Helper pour hash du mot de passe ---
-User.beforeCreate(async (user) => {
-  if (user.password) {
-    user.password = await bcrypt.hash(user.password, 10);
-  }
-});
-
-User.prototype.checkPassword = async function(password) {
-  return await bcrypt.compare(password, this.password);
-};
+// Les hooks sont maintenant définis dans le modèle User
 
 // --- Register new user ---
 const register = async (req, res) => {
@@ -116,10 +108,34 @@ const login = async (req, res) => {
 
     if (!user.isActive) return res.status(401).json({ error: 'Votre compte a été désactivé' });
 
-    const isPasswordValid = await user.checkPassword(password);
-    if (!isPasswordValid) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    // Vérifier si le compte est verrouillé
+    if (user.locked_until && new Date() < new Date(user.locked_until)) {
+      return res.status(401).json({ error: 'Compte temporairement verrouillé. Réessayez plus tard.' });
+    }
 
-    await user.update({ lastLogin: new Date() });
+    const isPasswordValid = await user.checkPassword(password);
+    if (!isPasswordValid) {
+      // Incrémenter les tentatives de connexion échouées
+      const attempts = (user.login_attempts || 0) + 1;
+      const updateData = { login_attempts: attempts };
+      
+      // Verrouiller le compte après 5 tentatives
+      if (attempts >= 5) {
+        updateData.locked_until = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+      }
+      
+      await user.update(updateData);
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+
+    // Réinitialiser les tentatives de connexion et mettre à jour la dernière connexion
+    await user.update({ 
+      lastLogin: new Date(),
+      login_attempts: 0,
+      locked_until: null,
+      last_login_ip: req.ip || req.connection.remoteAddress
+    });
+    
     const token = generateToken(user.id);
 
     res.json({ message: 'Connexion réussie', user: user.toJSON(), token });
