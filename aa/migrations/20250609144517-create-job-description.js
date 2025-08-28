@@ -20,23 +20,11 @@ module.exports = {
       },
       superieur_n1: {
         type: Sequelize.INTEGER,
-        references: {
-          model: "JobDescriptions",
-          key: "id",
-        },
         allowNull: true,
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE",
       },
       superieur_n2: {
         type: Sequelize.INTEGER,
-        references: {
-          model: "JobDescriptions",
-          key: "id",
-        },
         allowNull: true,
-        onDelete: "SET NULL",
-        onUpdate: "CASCADE",
       },
       finalite: {
         type: Sequelize.TEXT,
