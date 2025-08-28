@@ -24,6 +24,7 @@ const swaggerDocument = YAML.load("./swagger.yaml");
 const jobEmployeeSkillMatchRoutes = require("./src/routes/jobemployeeskillmatch");
 const authRoutes = require("./src/routes/auth");
 const userManagementRoutes = require("./src/routes/userManagement");
+const jobOfferRoutes = require("./src/routes/joboffer");
        
 
 
@@ -51,6 +52,7 @@ app.use("/api/jobrequiredskills", jobrequiredskillRoutes);
 app.use("/api/jobemployeeskillmatch", jobEmployeeSkillMatchRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", userManagementRoutes);
+app.use("/api/job-offers", jobOfferRoutes);
 
 
 // 404 - Route non trouvée

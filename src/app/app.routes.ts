@@ -17,6 +17,8 @@ import { AuthGuard } from './guards/auth.guard';
 import { GuestGuard } from './guards/guest.guard';
 import { EmployeeSkillsComponent } from './pages/employee-skills/employee-skills.component';
 import { UserManagementComponent } from './pages/admin/user-management/user-management.component';
+import { JobOfferComponent } from './pages/job-offer/job-offer.component';
+import { EnhancedUserManagementComponent } from './pages/enhanced-user-management/enhanced-user-management.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -40,6 +42,8 @@ export const routes: Routes = [
   { path: 'organigramme', component: OrganigrammeComponent, canActivate: [AuthGuard] },
   { path: 'employee-skills', component: EmployeeSkillsComponent, canActivate: [AuthGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
+  { path: 'job-offers/create', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
+  { path: 'admin/users-enhanced', component: EnhancedUserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   
   
   // Unauthorized page
