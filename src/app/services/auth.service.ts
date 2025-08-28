@@ -145,9 +145,9 @@ export class AuthService {
     const user = this.currentUser;
     if (!user) return false;
     
-    // Si l'utilisateur a des rôles dans un tableau
-    if (Array.isArray(user.role)) {
-      return user.role.includes(role);
+    // Vérifier dans le tableau des rôles
+    if (user.roles && Array.isArray(user.roles)) {
+      return user.roles.includes(role);
     }
     
     // Si l'utilisateur a un rôle simple
@@ -158,13 +158,13 @@ export class AuthService {
     const user = this.currentUser;
     if (!user) return false;
     
-    // Si l'utilisateur a des rôles dans un tableau
-    if (Array.isArray(user.role)) {
-      return roles.some(role => user.role.includes(role));
+    // Vérifier dans le tableau des rôles
+    if (user.roles && Array.isArray(user.roles)) {
+      return roles.some(role => user.roles.includes(role));
     }
     
     // Si l'utilisateur a un rôle simple
-    return roles.includes(user.role || '');
+    return roles.includes(user.role);
   }
 
   get isAdmin(): boolean {

@@ -226,7 +226,7 @@ export class JobOfferComponent implements OnInit {
         ...this.jobOfferForm.value,
         requirements: this.requirementsArray.value,
         benefits: this.benefitsArray.value,
-        created_by: 1 // TODO: Récupérer l'ID de l'utilisateur connecté
+        created_by: 1 // TODO: Intégrer avec AuthService pour récupérer l'ID utilisateur
       };
 
       // TODO: Implémenter l'appel API pour créer l'offre d'emploi
@@ -239,7 +239,7 @@ export class JobOfferComponent implements OnInit {
         
         // Rediriger vers la liste des offres après 2 secondes
         setTimeout(() => {
-          this.router.navigate(['/home']);
+          this.router.navigate(['/job-descriptions']);
         }, 2000);
       }, 1000);
     } else {

@@ -28,6 +28,12 @@ import { AuthService } from '../../services/auth.service';
           
           <div class="text-sm text-gray-500">
             <p>Votre rôle actuel : <span class="font-semibold">{{ currentUser?.role || 'Non défini' }}</span></p>
+            <p *ngIf="currentUser?.roles && currentUser.roles.length > 0" class="mt-1">
+              Rôles disponibles : 
+              <span *ngFor="let role of currentUser.roles; let last = last" class="font-semibold">
+                {{ role }}<span *ngIf="!last">, </span>
+              </span>
+            </p>
             <p class="mt-2">
               Contactez votre administrateur si vous pensez que c'est une erreur.
             </p>

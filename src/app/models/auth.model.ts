@@ -4,6 +4,7 @@ export interface User {
   lastName: string;
   email: string;
   role: 'admin' | 'hr' | 'manager' | 'employee';
+  roles: string[];
   isActive: boolean;
   lastLogin?: string;
   emailVerified: boolean;

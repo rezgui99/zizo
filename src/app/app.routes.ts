@@ -42,9 +42,8 @@ export const routes: Routes = [
   { path: 'organigramme', component: OrganigrammeComponent, canActivate: [AuthGuard] },
   { path: 'employee-skills', component: EmployeeSkillsComponent, canActivate: [AuthGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  { path: 'job-offer/create', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
-  { path: 'job-offer', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
-  { path: 'job-offer', component: JobOfferComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
+  { path: 'job-offer/create', component: JobOfferComponent, canActivate: [AuthGuard] },
+  { path: 'job-offers', component: JobOfferComponent, canActivate: [AuthGuard] },
   { path: 'admin/users-enhanced', component: EnhancedUserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   
   

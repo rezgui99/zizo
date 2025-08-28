@@ -141,15 +141,22 @@ const login = async (req, res) => {
       include: [{
         model: db.Role,
         as: 'roles',
+        where: { is_active: true },
+        required: false,
         through: { attributes: [] }
       }]
     });
     
-    // Déterminer le rôle principal (prendre le premier rôle ou 'employee' par défaut)
-    const primaryRole = userWithRoles?.roles?.[0]?.name || 'employee';
+    // Récupérer tous les rôles actifs de l'utilisateur
+    const userRoles = userWithRoles?.roles?.map(role => role.name) || [];
+    const primaryRole = userRoles.includes('admin') ? 'admin' : 
+                       userRoles.includes('hr') ? 'hr' : 
+                       userRoles.includes('manager') ? 'manager' : 'employee';
+    
     const userResponse = {
       ...user.toJSON(),
-      role: primaryRole
+      role: primaryRole,
+      roles: userRoles
     };
     
     const token = generateToken(user.id);
