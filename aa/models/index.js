@@ -18,7 +18,7 @@ const sequelize = new Sequelize(
   {
     host: config.host,
     dialect: config.dialect || "postgres",
-    // logging: false,
+    logging: env === 'development' ? console.log : false,
   }
 );
 

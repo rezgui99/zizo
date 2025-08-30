@@ -93,7 +93,12 @@ export class AuthService {
   login(data: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/login`, data)
       .pipe(
-        tap(res => this.setAuthData(res.token, res.user)),
+        tap(res => {
+          console.log('Login response:', res);
+          console.log('User roles:', res.user.roles);
+          console.log('Primary role:', res.user.role);
+          this.setAuthData(res.token, res.user);
+        }),
         catchError(err => this.handleError(err))
       );
   }

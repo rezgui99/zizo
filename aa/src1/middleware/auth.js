@@ -33,7 +33,33 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    req.user = user;
+    // Récupérer l'utilisateur avec ses rôles
+    const userWithRoles = await User.findByPk(decoded.userId, {
+      include: [{
+        model: db.Role,
+        as: 'roles',
+        required: false,
+        through: { attributes: [] }
+      }]
+    });
+
+    if (!userWithRoles || !userWithRoles.isActive) {
+      return res.status(401).json({ 
+        error: 'Invalid token',
+        message: 'Token invalide ou utilisateur inactif'
+      });
+    }
+
+    // Ajouter les rôles à l'objet user
+    const userRoles = userWithRoles.roles?.filter(role => role.is_active)?.map(role => role.name) || [];
+    const primaryRole = userRoles.includes('admin') ? 'admin' : userRoles.includes('hr') ? 'hr' : 'user';
+    
+    req.user = {
+      ...userWithRoles.toJSON(),
+      role: primaryRole,
+      roles: userRoles
+    };
+    
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

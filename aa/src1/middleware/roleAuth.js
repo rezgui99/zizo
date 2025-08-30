@@ -13,25 +13,8 @@ const requireRole = (...requiredRoles) => {
         });
       }
 
-      // Récupérer les rôles de l'utilisateur
-      const userWithRoles = await User.findByPk(req.user.id, {
-        include: [{
-          model: Role,
-          as: 'roles',
-          where: { is_active: true },
-          required: false,
-          through: { attributes: [] }
-        }]
-      });
-
-      if (!userWithRoles) {
-        return res.status(401).json({
-          error: 'User not found',
-          message: 'Utilisateur non trouvé'
-        });
-      }
-
-      const userRoles = userWithRoles.roles.map(role => role.name);
+      // Les rôles sont déjà chargés dans req.user par le middleware auth
+      const userRoles = req.user.roles || [];
       const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
 
       if (!hasRequiredRole) {

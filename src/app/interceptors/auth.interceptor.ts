@@ -3,9 +3,11 @@ import {
   HttpEvent,
   HttpHandler,
   HttpInterceptor,
-  HttpRequest
+  HttpRequest,
+  HttpErrorResponse
 } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 
 @Injectable()
@@ -22,7 +24,15 @@ export class AuthInterceptor implements HttpInterceptor {
           Authorization: `Bearer ${token}`
         }
       });
-      return next.handle(cloned);
+      return next.handle(cloned).pipe(
+        catchError((error: HttpErrorResponse) => {
+          if (error.status === 401) {
+            console.error('Token expired or invalid, logging out...');
+            this.authService.forceLogout();
+          }
+          return throwError(() => error);
+        })
+      );
     }
 
     return next.handle(req);

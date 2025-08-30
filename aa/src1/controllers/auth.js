@@ -191,15 +191,14 @@ const login = async (req, res) => {
       include: [{
         model: db.Role,
         as: 'roles',
-        where: { is_active: true },
         required: false,
         through: { attributes: [] }
       }]
     });
     
-    // Récupérer tous les rôles actifs de l'utilisateur
-    const userRoles = userWithRoles?.roles?.map(role => role.name) || [];
-    const primaryRole = userRoles.includes('admin') ? 'admin' : 'hr';
+    // Récupérer tous les rôles de l'utilisateur
+    const userRoles = userWithRoles?.roles?.filter(role => role.is_active)?.map(role => role.name) || [];
+    const primaryRole = userRoles.includes('admin') ? 'admin' : userRoles.includes('hr') ? 'hr' : 'user';
     
     const userResponse = {
       ...user.toJSON(),
