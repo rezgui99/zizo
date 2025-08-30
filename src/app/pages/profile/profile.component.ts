@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { EmployeeService } from '../../services/employee.service';
 import { SkillService } from '../../services/skill.service';
+import { EmployeeSkillService } from '../../services/employee-skill.service';
 import { Employee, Skill, SkillType, SkillLevel } from '../../models/employee.model';
 
 @Component({
@@ -24,12 +25,21 @@ export class ProfileComponent implements OnInit {
   errorMessage: string | null = null;
   successMessage: string | null = null;
   isEditing: boolean = false;
+  
+  // Gestion des compétences individuelles
+  showSkillForm: boolean = false;
+  skillForm: FormGroup;
+  editingSkill: any = null;
+  skillErrorMessage: string | null = null;
+  skillSuccessMessage: string | null = null;
+  savingSkill: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private employeeService: EmployeeService,
     private skillService: SkillService,
+    private employeeSkillService: EmployeeSkillService,
     private formBuilder: FormBuilder
   ) {
     this.profileForm = this.formBuilder.group({
@@ -42,6 +52,14 @@ export class ProfileComponent implements OnInit {
       location: [''],
       notes: [''],
       skills: this.formBuilder.array([])
+    });
+
+    this.skillForm = this.formBuilder.group({
+      skill_id: ['', Validators.required],
+      actual_skill_level_id: ['', Validators.required],
+      acquired_date: [''],
+      certification: [''],
+      last_evaluated_date: ['']
     });
   }
 
@@ -178,5 +196,146 @@ export class ProfileComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/employees']);
+  }
+
+  // ==================== GESTION COMPÉTENCES INDIVIDUELLES ====================
+
+  showAddSkillForm(): void {
+    this.showSkillForm = true;
+    this.editingSkill = null;
+    this.skillForm.reset();
+    this.clearSkillMessages();
+  }
+
+  editSkill(skill: any): void {
+    this.editingSkill = skill;
+    this.showSkillForm = true;
+    this.skillForm.patchValue({
+      skill_id: skill.skill_id,
+      actual_skill_level_id: skill.actual_skill_level_id,
+      acquired_date: skill.acquired_date || '',
+      certification: skill.certification || '',
+      last_evaluated_date: skill.last_evaluated_date || ''
+    });
+    this.clearSkillMessages();
+  }
+
+  onSkillSubmit(): void {
+    if (this.skillForm.valid && this.employee) {
+      this.savingSkill = true;
+      const skillData = {
+        employee_id: this.employee.id!,
+        skill_id: parseInt(this.skillForm.value.skill_id, 10),
+        actual_skill_level_id: parseInt(this.skillForm.value.actual_skill_level_id, 10),
+        acquired_date: this.skillForm.value.acquired_date || null,
+        certification: this.skillForm.value.certification || null,
+        last_evaluated_date: this.skillForm.value.last_evaluated_date || null
+      };
+
+      if (this.editingSkill) {
+        // Mise à jour
+        this.employeeSkillService.update(
+          this.editingSkill.employee_id,
+          this.editingSkill.skill_id,
+          skillData
+        ).subscribe({
+          next: () => {
+            this.skillSuccessMessage = 'Compétence mise à jour avec succès';
+            this.loadEmployee(this.employee!.id!);
+            this.cancelSkillEdit();
+            this.savingSkill = false;
+          },
+          error: (err) => {
+            console.error('Error updating skill:', err);
+            this.skillErrorMessage = `Erreur mise à jour: ${err.error?.message || err.message}`;
+            this.savingSkill = false;
+          }
+        });
+      } else {
+        // Création
+        this.employeeSkillService.create(skillData).subscribe({
+          next: () => {
+            this.skillSuccessMessage = 'Compétence ajoutée avec succès';
+            this.loadEmployee(this.employee!.id!);
+            this.cancelSkillEdit();
+            this.savingSkill = false;
+          },
+          error: (err) => {
+            console.error('Error creating skill:', err);
+            this.skillErrorMessage = `Erreur création: ${err.error?.message || err.message}`;
+            this.savingSkill = false;
+          }
+        });
+      }
+    }
+  }
+
+  deleteSkill(skill: any): void {
+    const skillName = this.getSkillName(skill.skill_id);
+    if (window.confirm(`Supprimer la compétence "${skillName}" ?`)) {
+      this.employeeSkillService.delete(this.employee!.id!, skill.skill_id).subscribe({
+        next: () => {
+          this.skillSuccessMessage = 'Compétence supprimée avec succès';
+          this.loadEmployee(this.employee!.id!);
+        },
+        error: (err) => {
+          console.error('Error deleting skill:', err);
+          this.skillErrorMessage = 'Erreur lors de la suppression de la compétence.';
+        }
+      });
+    }
+  }
+
+  cancelSkillEdit(): void {
+    this.showSkillForm = false;
+    this.editingSkill = null;
+    this.skillForm.reset();
+    this.clearSkillMessages();
+  }
+
+  clearSkillMessages(): void {
+    this.skillErrorMessage = null;
+    this.skillSuccessMessage = null;
+  }
+
+  // Statistiques pour le profil
+  getCertifiedSkillsCount(): number {
+    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) return 0;
+    return this.employee.skills.filter(skill => skill.certification && skill.certification.trim() !== '').length;
+  }
+
+  getAverageSkillLevel(): number {
+    if (!this.employee?.skills || !Array.isArray(this.employee.skills) || this.employee.skills.length === 0) return 0;
+    
+    const totalValue = this.employee.skills.reduce((sum, skill) => {
+      const level = this.skillLevels.find(l => l.id === skill.actual_skill_level_id);
+      return sum + (level?.value || 0);
+    }, 0);
+    
+    return totalValue / this.employee.skills.length;
+  }
+
+  getSkillsByType(): { [key: string]: any[] } {
+    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) return {};
+    
+    const skillsByType: { [key: string]: any[] } = {};
+    
+    this.employee.skills.forEach(skill => {
+      const skillObj = this.skills.find(s => s.id === skill.skill_id);
+      const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
+      const typeName = typeObj?.type_name || 'Autre';
+      
+      if (!skillsByType[typeName]) {
+        skillsByType[typeName] = [];
+      }
+      skillsByType[typeName].push(skill);
+    });
+    
+    return skillsByType;
+  }
+
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'Non définie';
+    return new Date(dateString).toLocaleDateString('fr-FR');
   }
 }

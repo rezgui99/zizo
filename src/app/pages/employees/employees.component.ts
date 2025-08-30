@@ -36,6 +36,10 @@ export class EmployeesComponent implements OnInit {
   editingSkill: any = null;
   selectedEmployee: Employee | null = null;
   
+  // Vue détaillée des compétences
+  showSkillsDetailModal: boolean = false;
+  skillsDetailEmployee: Employee | null = null;
+  
   // États de chargement
   loading: boolean = false;
   loadingJobs: boolean = false;
@@ -562,12 +566,98 @@ export class EmployeesComponent implements OnInit {
     this.skillSuccessMessage = null;
   }
 
+  // ==================== VUE DÉTAILLÉE DES COMPÉTENCES ====================
+
+  showEmployeeSkillsDetail(employee: Employee): void {
+    this.skillsDetailEmployee = employee;
+    this.showSkillsDetailModal = true;
+    this.clearSkillMessages();
+  }
+
+  closeSkillsDetailModal(): void {
+    this.showSkillsDetailModal = false;
+    this.skillsDetailEmployee = null;
+    this.clearSkillMessages();
+  }
+
+  addSkillToDetailEmployee(): void {
+    if (this.skillsDetailEmployee) {
+      this.showAddSkillForm(this.skillsDetailEmployee);
+      this.closeSkillsDetailModal();
+    }
+  }
+
+  editSkillFromDetail(skill: any): void {
+    if (this.skillsDetailEmployee) {
+      this.editEmployeeSkill(this.skillsDetailEmployee, skill);
+      this.closeSkillsDetailModal();
+    }
+  }
+
+  deleteSkillFromDetail(skill: any): void {
+    if (this.skillsDetailEmployee) {
+      this.deleteEmployeeSkill(this.skillsDetailEmployee, skill);
+      // Recharger les données après suppression
+      setTimeout(() => {
+        this.loadEmployees();
+      }, 500);
+    }
+  }
+
+  getSkillTypeNameSafe(skill: any): string {
+    if (!skill) return 'Type inconnu';
+    
+    // Différentes structures possibles
+    if (skill.skill?.type?.type_name) return skill.skill.type.type_name;
+    if (skill.Skill?.type?.type_name) return skill.Skill.type.type_name;
+    
+    // Fallback
+    const skillId = skill.skill_id || skill.id;
+    const skillObj = this.skills.find(s => s.id === skillId);
+    return skillObj?.type?.type_name || 'Type inconnu';
+  }
+
+  formatDate(dateString: string | null): string {
+    if (!dateString) return 'Non définie';
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  }
+
   // Compter les compétences d'un employé
   getSkillsCount(employee: Employee): number {
     if (!employee.skills || !Array.isArray(employee.skills)) {
       return 0;
     }
     return employee.skills.length;
+  }
+
+  // Statistiques pour la vue détaillée
+  getCertifiedSkillsCount(employee: Employee): number {
+    if (!employee?.skills || !Array.isArray(employee.skills)) return 0;
+    return employee.skills.filter(skill => skill.certification && skill.certification.trim() !== '').length;
+  }
+
+  getAverageSkillLevel(employee: Employee): number {
+    if (!employee?.skills || !Array.isArray(employee.skills) || employee.skills.length === 0) return 0;
+    
+    const totalValue = employee.skills.reduce((sum, skill) => {
+      return sum + this.getSkillLevelValueSafe(skill);
+    }, 0);
+    
+    return totalValue / employee.skills.length;
+  }
+
+  getSkillsByType(employee: Employee): string[] {
+    if (!employee?.skills || !Array.isArray(employee.skills)) return [];
+    
+    const types = new Set<string>();
+    employee.skills.forEach(skill => {
+      const typeName = this.getSkillTypeNameSafe(skill);
+      if (typeName !== 'Type inconnu') {
+        types.add(typeName);
+      }
+    });
+    
+    return Array.from(types);
   }
 
   // Obtenir les compétences visibles (premières compétences)
