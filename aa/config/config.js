@@ -7,6 +7,7 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     dialect: "postgres",
+    logging: console.log, // Activer les logs SQL pour debug
   },
   test: {
     username: process.env.DB_USER,
