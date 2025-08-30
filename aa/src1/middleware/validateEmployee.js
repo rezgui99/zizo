@@ -4,13 +4,22 @@ const employeeSchema = Joi.object({
   name: Joi.string().min(3).max(100).required(),
   position: Joi.string().min(3).max(100).required(),
   hire_date: Joi.date().iso().required(),
-  email: Joi.string().email().required(), // renommé depuis contact_info
+  email: Joi.string().email().required(),
   phone: Joi.string()
     .pattern(/^\+?[0-9\s\-]{7,20}$/)
-    .allow(null, ""), // optionnel
-  gender: Joi.string().valid("Homme", "Femme", ).allow(null), // optionnel
-  location: Joi.string().max(100).allow(null, ""), // optionnel
-  notes: Joi.string().allow(null, ""), // optionnel
+    .allow(null, ""),
+  gender: Joi.string().valid("Homme", "Femme", "Autre").allow(null, ""),
+  location: Joi.string().max(100).allow(null, ""),
+  notes: Joi.string().allow(null, ""),
+  skills: Joi.array().items(
+    Joi.object({
+      skill_id: Joi.number().integer().positive().required(),
+      actual_skill_level_id: Joi.number().integer().positive().allow(null),
+      acquired_date: Joi.date().iso().allow(null),
+      certification: Joi.string().allow(null, ""),
+      last_evaluated_date: Joi.date().iso().allow(null)
+    })
+  ).optional()
 });
 
 module.exports = function validateEmployee(req, res, next) {

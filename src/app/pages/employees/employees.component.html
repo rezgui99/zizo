@@ -88,10 +88,6 @@
                   <option value="">Sélectionner une compétence</option>
                   <option *ngFor="let skill of skills" [value]="skill.id">{{ skill.name }}</option>
                 </select>
-                <div *ngIf="skillGroup.get('skill_id')?.invalid && skillGroup.get('skill_id')?.touched" 
-                     class="text-red-500 text-xs mt-1">
-                  Compétence requise
-                </div>
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Niveau *</label>
@@ -100,10 +96,6 @@
                   <option value="">Sélectionner un niveau</option>
                   <option *ngFor="let level of skillLevels" [value]="level.id">{{ level.level_name }}</option>
                 </select>
-                <div *ngIf="skillGroup.get('actual_skill_level_id')?.invalid && skillGroup.get('actual_skill_level_id')?.touched" 
-                     class="text-red-500 text-xs mt-1">
-                  Niveau requis
-                </div>
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Date d'acquisition</label>

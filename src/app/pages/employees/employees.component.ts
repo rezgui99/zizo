@@ -132,6 +132,17 @@ export class EmployeesComponent implements OnInit {
     if (this.employeeForm.valid) {
       const formValue = this.employeeForm.value;
       
+      // Filtrer et préparer les compétences valides
+      const skillsData = formValue.skills
+        .filter((skill: any) => skill.skill_id && skill.actual_skill_level_id)
+        .map((skill: any) => ({
+          skill_id: parseInt(skill.skill_id, 10),
+          actual_skill_level_id: parseInt(skill.actual_skill_level_id, 10),
+          acquired_date: skill.acquired_date || null,
+          certification: skill.certification || null,
+          last_evaluated_date: skill.last_evaluated_date || null
+        }));
+
       const employeeData = {
         name: formValue.name,
         position: formValue.position,
@@ -141,7 +152,7 @@ export class EmployeesComponent implements OnInit {
         gender: formValue.gender || '',
         location: formValue.location || '',
         notes: formValue.notes || '',
-        skills: formValue.skills || []
+        skills: skillsData
       } as Employee;
       
       console.log('Données employé à envoyer:', employeeData);

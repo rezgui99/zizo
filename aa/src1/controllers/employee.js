@@ -2,103 +2,30 @@ const db = require("../../models/index");
 const { Employee, EmployeeSkill, Skill, SkillLevel, sequelize } = db;
 
 async function syncEmployeeSkills({ employee, skills, transaction }) {
+  // Supprimer toutes les compétences existantes
   await EmployeeSkill.destroy({
     where: { employee_id: employee.id },
     transaction,
   });
 
+  // Ajouter les nouvelles compétences
   for (const skillData of skills) {
-    let skillInstance;
-
-    if (skillData.id) {
-      skillInstance = await Skill.findByPk(skillData.id, { transaction });
-      if (!skillInstance)
-        throw new Error(`Compétence avec id ${skillData.id} n'existe pas.`);
-    } else if (skillData.skill?.name) {
-      skillInstance = await Skill.findOne({
-        where: { name: skillData.skill.name },
-        transaction,
-      });
-
-      if (!skillInstance) {
-        skillInstance = await Skill.create(
-          {
-            name: skillData.skill.name,
-            description: skillData.skill.description || null,
-            skill_type_id: skillData.skill.skill_type_id || null,
-          },
-          { transaction }
-        );
-      }
-    } else {
-      throw new Error(
-        "Chaque compétence doit avoir un 'id' ou un objet 'skill' avec 'name'."
-      );
+    // Vérifier que la compétence existe
+    const skillInstance = await Skill.findByPk(skillData.skill_id, { transaction });
+    if (!skillInstance) {
+      throw new Error(`Compétence avec id ${skillData.skill_id} n'existe pas.`);
     }
 
-    // Gestion du niveau
-    let skillLevelId = null;
-
-    if (skillData.actual_skill_level_id) {
-      const level = await SkillLevel.findByPk(skillData.actual_skill_level_id, {
-        transaction,
-      });
-      if (!level)
-        throw new Error(
-          `Niveau avec id ${skillData.actual_skill_level_id} introuvable.`
-        );
-      skillLevelId = level.id;
-    } else if (skillData.skill_level) {
-      let level = await SkillLevel.findOne({
-        where: { level_name: skillData.skill_level },
-        transaction,
-      });
-
+    // Vérifier que le niveau existe si fourni
+    let skillLevelId = skillData.actual_skill_level_id || null;
+    if (skillLevelId) {
+      const level = await SkillLevel.findByPk(skillLevelId, { transaction });
       if (!level) {
-        if (
-          !skillData.skill_level_value ||
-          !skillData.skill_level_description
-        ) {
-          throw new Error(
-            `Pour créer le niveau '${skillData.skill_level}', 'skill_level_value' et 'skill_level_description' sont requis.`
-          );
-        }
-        level = await SkillLevel.create(
-          {
-            level_name: skillData.skill_level,
-            value: skillData.skill_level_value,
-            description: skillData.skill_level_description,
-          },
-          { transaction }
-        );
+        throw new Error(`Niveau avec id ${skillLevelId} n'existe pas.`);
       }
-
-      skillLevelId = level.id;
-    } else if (skillData.skill_level_value) {
-      let level = await SkillLevel.findOne({
-        where: { value: skillData.skill_level_value },
-        transaction,
-      });
-
-      if (!level) {
-        if (!skillData.skill_level_description || !skillData.skill_level) {
-          throw new Error(
-            `Pour créer un nouveau niveau avec value ${skillData.skill_level_value}, fournir 'skill_level' et 'skill_level_description'.`
-          );
-        }
-        level = await SkillLevel.create(
-          {
-            level_name: skillData.skill_level,
-            value: skillData.skill_level_value,
-            description: skillData.skill_level_description,
-          },
-          { transaction }
-        );
-      }
-
-      skillLevelId = level.id;
     }
 
+    // Créer l'association employé-compétence
     await EmployeeSkill.create(
       {
         employee_id: employee.id,
