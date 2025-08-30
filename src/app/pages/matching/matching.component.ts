@@ -244,4 +244,48 @@ export class MatchingComponent implements OnInit {
   getJobDescriptionFromResult(result: MatchingResult): JobDescription | undefined {
     return this.jobDescriptions.find(job => job.id === result.job_description_id);
   }
+
+  calculateSuccessPredictions(): void {
+    if (!this.selectedJobId || this.matchingResults.length === 0) return;
+
+    this.loadingPredictions = true;
+    this.predictionsMessage = null;
+    this.successPredictions = [];
+
+    const predictions = this.matchingResults.slice(0, 5).map(result => ({
+      employee_id: result.employee_id,
+      job_description_id: this.selectedJobId!
+    }));
+
+    this.analyticsService.predictMultipleApplications(predictions).subscribe({
+      next: (predictions) => {
+        this.successPredictions = predictions;
+        this.loadingPredictions = false;
+      },
+      error: (err) => {
+        console.error('Error calculating predictions:', err);
+        this.predictionsMessage = 'Erreur lors du calcul des prédictions.';
+        this.loadingPredictions = false;
+      }
+    });
+  }
+
+  getPredictionForEmployee(employeeId: number): ApplicationSuccessPrediction | undefined {
+    return this.successPredictions.find(p => p.employee_id === employeeId);
+  }
+
+  getPredictionClass(probability: number): string {
+    if (probability >= 80) return 'text-green-600';
+    if (probability >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+
+  getConfidenceClass(level: string): string {
+    switch (level) {
+      case 'high': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
 }

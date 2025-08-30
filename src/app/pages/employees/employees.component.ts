@@ -725,7 +725,7 @@ export class EmployeesComponent implements OnInit {
     return totalValue / employee.skills.length;
   }
 
-  getSkillsByType(employee: Employee): string[] {
+  getSkillsByTypeCount(employee: Employee): number {
     if (!employee?.skills || !Array.isArray(employee.skills)) return [];
     
     const types = new Set<string>();
@@ -736,7 +736,7 @@ export class EmployeesComponent implements OnInit {
       }
     });
     
-    return Array.from(types);
+    return types.size;
   }
 
   // Obtenir les compétences visibles (premières compétences)
