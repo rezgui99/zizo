@@ -19,6 +19,7 @@ import { EmployeeSkillsComponent } from './pages/employee-skills/employee-skills
 import { UserManagementComponent } from './pages/admin/user-management/user-management.component';
 import { JobOfferComponent } from './pages/job-offer/job-offer.component';
 import { EnhancedUserManagementComponent } from './pages/enhanced-user-management/enhanced-user-management.component';
+import { AdvancedAnalyticsComponent } from './pages/advanced-analytics/advanced-analytics.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -37,6 +38,7 @@ export const routes: Routes = [
   { path: 'job-descriptions', component: JobDescriptionsComponent, canActivate: [AuthGuard] },
   { path: 'matching', component: MatchingComponent, canActivate: [AuthGuard] },
   { path: 'statistics', component: StatisticsComponent, canActivate: [AuthGuard] },
+  { path: 'advanced-analytics', component: AdvancedAnalyticsComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
   { path: 'cv-library', component: CvLibraryComponent, canActivate: [AuthGuard] },
   { path: 'skills-management', component: SkillsManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
   { path: 'organigramme', component: OrganigrammeComponent, canActivate: [AuthGuard] },

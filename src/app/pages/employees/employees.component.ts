@@ -12,6 +12,8 @@ import { Employee, Skill, SkillLevel } from '../../models/employee.model';
 import { JobDescription } from '../../models/job-description.model';
 import { MatchingResult } from '../../models/matching.model';
 import { EmployeeSkillService } from '../../services/employee-skill.service';
+import { AnalyticsService } from '../../services/analytics.service';
+import { EmployeeSkillRecommendation, ApplicationSuccessPrediction } from '../../models/analytics.model';
 
 @Component({
   selector: 'app-employees',
@@ -67,12 +69,20 @@ export class EmployeesComponent implements OnInit {
   loadingBestMatches: boolean = false;
   autoAssignMessage: string | null = null;
 
+  // Recommandations de compétences
+  showRecommendationsModal: boolean = false;
+  recommendationsEmployee: Employee | null = null;
+  skillRecommendations: EmployeeSkillRecommendation | null = null;
+  loadingRecommendations: boolean = false;
+  recommendationsMessage: string | null = null;
+
   constructor(
     private employeeService: EmployeeService,
     private skillService: SkillService,
     private jobDescriptionService: JobDescriptionService,
     private matchingService: MatchingService,
     private employeeSkillService: EmployeeSkillService,
+    private analyticsService: AnalyticsService,
     private formBuilder: FormBuilder
   ) {
     this.employeeForm = this.formBuilder.group({
@@ -632,6 +642,50 @@ export class EmployeesComponent implements OnInit {
   getFirstCharSafe(name: string | undefined): string {
     if (!name || name.length === 0) return '?';
     return name.charAt(0).toUpperCase();
+  }
+
+  // ==================== RECOMMANDATIONS DE COMPÉTENCES ====================
+
+  showSkillRecommendations(employee: Employee): void {
+    this.recommendationsEmployee = employee;
+    this.showRecommendationsModal = true;
+    this.loadingRecommendations = true;
+    this.recommendationsMessage = null;
+    this.skillRecommendations = null;
+
+    this.analyticsService.getEmployeeSkillRecommendations(employee.id!).subscribe({
+      next: (recommendations) => {
+        this.skillRecommendations = recommendations;
+        this.loadingRecommendations = false;
+      },
+      error: (err) => {
+        console.error('Error loading skill recommendations:', err);
+        this.recommendationsMessage = 'Erreur lors du chargement des recommandations.';
+        this.loadingRecommendations = false;
+      }
+    });
+  }
+
+  closeRecommendationsModal(): void {
+    this.showRecommendationsModal = false;
+    this.recommendationsEmployee = null;
+    this.skillRecommendations = null;
+    this.recommendationsMessage = null;
+    this.loadingRecommendations = false;
+  }
+
+  getPriorityClass(score: number): string {
+    if (score >= 80) return 'bg-red-100 text-red-800 border-red-200';
+    if (score >= 60) return 'bg-orange-100 text-orange-800 border-orange-200';
+    if (score >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+    return 'bg-green-100 text-green-800 border-green-200';
+  }
+
+  getPriorityLabel(score: number): string {
+    if (score >= 80) return 'CRITIQUE';
+    if (score >= 60) return 'ÉLEVÉE';
+    if (score >= 40) return 'MOYENNE';
+    return 'FAIBLE';
   }
 
   // Méthode sécurisée pour vérifier les compétences

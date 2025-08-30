@@ -35,6 +35,7 @@ try {
   const authRoutes = require("./src1/routes/auth");
   const userManagementRoutes = require("./src1/routes/userManagement");
   const jobOfferRoutes = require("./src1/routes/joboffer");
+  const analyticsRoutes = require("./src1/routes/analytics");
   console.log("✅ Routes chargées avec succès");
 } catch (e) {
   console.error("❌ Erreur lors du chargement des routes :", e.message);
@@ -81,6 +82,7 @@ try {
   app.use("/api/auth", authRoutes);
   app.use("/api/admin", userManagementRoutes);
   app.use("/api/job-offers", jobOfferRoutes);
+  app.use("/api/analytics", analyticsRoutes);
   console.log("✅ Routes API configurées");
 } catch (e) {
   console.error("❌ Erreur lors de la configuration des routes :", e.message);
