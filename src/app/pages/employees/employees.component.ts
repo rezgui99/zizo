@@ -622,6 +622,31 @@ export class EmployeesComponent implements OnInit {
     return new Date(dateString).toLocaleDateString('fr-FR');
   }
 
+  // Méthode sécurisée pour formater les dates avec undefined
+  formatDateSafe(dateString: string | null | undefined): string {
+    if (!dateString) return 'Non définie';
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  }
+
+  // Méthode sécurisée pour obtenir le premier caractère
+  getFirstCharSafe(name: string | undefined): string {
+    if (!name || name.length === 0) return '?';
+    return name.charAt(0).toUpperCase();
+  }
+
+  // Méthode sécurisée pour vérifier les compétences
+  hasSkillsSafe(employee: Employee | null): boolean {
+    return !!(employee?.skills && Array.isArray(employee.skills) && employee.skills.length > 0);
+  }
+
+  // Méthode sécurisée pour obtenir les compétences
+  getSkillsSafe(employee: Employee | null): any[] {
+    if (!employee?.skills || !Array.isArray(employee.skills)) {
+      return [];
+    }
+    return employee.skills;
+  }
+
   // Compter les compétences d'un employé
   getSkillsCount(employee: Employee): number {
     if (!employee.skills || !Array.isArray(employee.skills)) {

@@ -573,7 +573,7 @@
         <div class="flex justify-between items-center mb-6">
           <div class="flex items-center">
             <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold mr-4">
-              {{ skillsDetailEmployee?.name.charAt(0).toUpperCase() }}
+              {{ getFirstCharSafe(skillsDetailEmployee?.name) }}
             </div>
             <div>
               <h3 class="text-xl font-medium text-gray-900">
@@ -631,7 +631,7 @@
         <div class="space-y-4">
           <h4 class="text-lg font-semibold text-dark">📋 Détail des Compétences</h4>
           
-          <div *ngIf="!skillsDetailEmployee?.skills || skillsDetailEmployee.skills.length === 0" 
+          <div *ngIf="!hasSkillsSafe(skillsDetailEmployee)" 
                class="text-center py-8 text-gray-500">
             <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -644,9 +644,9 @@
             </button>
           </div>
 
-          <div *ngIf="skillsDetailEmployee?.skills && skillsDetailEmployee.skills.length > 0" 
+          <div *ngIf="hasSkillsSafe(skillsDetailEmployee)" 
                class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div *ngFor="let skill of skillsDetailEmployee.skills; let i = index" 
+            <div *ngFor="let skill of getSkillsSafe(skillsDetailEmployee); let i = index" 
                  class="border rounded-lg p-4 bg-white hover:shadow-md transition-shadow duration-200">
               <!-- Header de la compétence -->
               <div class="flex justify-between items-start mb-3">
@@ -665,11 +665,11 @@
               <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
                 <div>
                   <span class="font-medium">Acquise le :</span>
-                  <p>{{ formatDate(skill.acquired_date) }}</p>
+                  <p>{{ formatDateSafe(skill.acquired_date) }}</p>
                 </div>
                 <div>
                   <span class="font-medium">Dernière évaluation :</span>
-                  <p>{{ formatDate(skill.last_evaluated_date) }}</p>
+                  <p>{{ formatDateSafe(skill.last_evaluated_date) }}</p>
                 </div>
               </div>
 

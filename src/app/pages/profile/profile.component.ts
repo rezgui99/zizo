@@ -300,27 +300,28 @@ export class ProfileComponent implements OnInit {
 
   // Statistiques pour le profil
   getCertifiedSkillsCount(): number {
-    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) return 0;
-    return this.employee.skills.filter(skill => skill.certification && skill.certification.trim() !== '').length;
+    if (!this.hasSkillsSafe()) return 0;
+    return this.getSkillsSafe().filter(skill => skill.certification && skill.certification.trim() !== '').length;
   }
 
   getAverageSkillLevel(): number {
-    if (!this.employee?.skills || !Array.isArray(this.employee.skills) || this.employee.skills.length === 0) return 0;
+    const skills = this.getSkillsSafe();
+    if (skills.length === 0) return 0;
     
-    const totalValue = this.employee.skills.reduce((sum, skill) => {
+    const totalValue = skills.reduce((sum, skill) => {
       const level = this.skillLevels.find(l => l.id === skill.actual_skill_level_id);
       return sum + (level?.value || 0);
     }, 0);
     
-    return totalValue / this.employee.skills.length;
+    return totalValue / skills.length;
   }
 
   getSkillsByType(): { [key: string]: any[] } {
-    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) return {};
+    if (!this.hasSkillsSafe()) return {};
     
     const skillsByType: { [key: string]: any[] } = {};
     
-    this.employee.skills.forEach(skill => {
+    this.getSkillsSafe().forEach(skill => {
       const skillObj = this.skills.find(s => s.id === skill.skill_id);
       const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
       const typeName = typeObj?.type_name || 'Autre';
@@ -334,8 +335,23 @@ export class ProfileComponent implements OnInit {
     return skillsByType;
   }
 
-  formatDate(dateString: string | null): string {
+
+  // Méthode sécurisée pour formater les dates avec undefined
+  formatDateSafe(dateString: string | null | undefined): string {
     if (!dateString) return 'Non définie';
     return new Date(dateString).toLocaleDateString('fr-FR');
+  }
+
+  // Méthode sécurisée pour vérifier les compétences
+  hasSkillsSafe(): boolean {
+    return !!(this.employee?.skills && Array.isArray(this.employee.skills) && this.employee.skills.length > 0);
+  }
+
+  // Méthode sécurisée pour obtenir les compétences
+  getSkillsSafe(): any[] {
+    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) {
+      return [];
+    }
+    return this.employee.skills;
   }
 }
