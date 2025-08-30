@@ -336,8 +336,100 @@ export class ProfileComponent implements OnInit {
   }
 
   getSkillsByTypeCount(): number {
-    const skillsByType = this.getSkillsByType();
-    return Object.keys(skillsByType).length;
+    if (!this.hasSkillsSafe()) return 0;
+    
+    const types = new Set<string>();
+    this.getSkillsSafe().forEach(skill => {
+      const typeName = this.getSkillTypeNameSafe(skill);
+      if (typeName !== 'Type inconnu') {
+        types.add(typeName);
+      }
+    });
+    
+    return types.size;
+  }
+
+  getSkillsByTypeEntries(): Array<{type: string, skills: any[]}> {
+    if (!this.hasSkillsSafe()) return [];
+    
+    const skillsByType: { [key: string]: any[] } = {};
+    
+    this.getSkillsSafe().forEach(skill => {
+      const typeName = this.getSkillTypeNameSafe(skill);
+      
+      if (!skillsByType[typeName]) {
+        skillsByType[typeName] = [];
+      }
+      skillsByType[typeName].push(skill);
+    });
+    
+    return Object.entries(skillsByType).map(([type, skills]) => ({ type, skills }));
+  }
+
+  getSkillTypeNameSafe(skill: any): string {
+    if (!skill) return 'Type inconnu';
+    
+    // Différentes structures possibles
+    if (skill.skill?.type?.type_name) return skill.skill.type.type_name;
+    if (skill.Skill?.type?.type_name) return skill.Skill.type.type_name;
+    
+    // Fallback avec l'ID
+    const skillId = skill.skill_id || skill.id;
+    const skillObj = this.skills.find(s => s.id === skillId);
+    const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
+    return typeObj?.type_name || 'Type inconnu';
+  }
+
+  getSkillNameSafe(skill: any): string {
+    if (!skill) return 'Compétence inconnue';
+    
+    // Différentes structures possibles
+    if (skill.skill?.name) return skill.skill.name;
+    if (skill.Skill?.name) return skill.Skill.name;
+    if (skill.name) return skill.name;
+    
+    // Fallback avec l'ID
+    const skillId = skill.skill_id || skill.id;
+    return this.getSkillName(skillId);
+  }
+
+  getSkillLevelNameSafe(skill: any): string {
+    if (!skill) return 'Niveau inconnu';
+    
+    // Différentes structures possibles
+    if (skill.SkillLevel?.level_name) return skill.SkillLevel.level_name;
+    if (skill.skill_level?.level_name) return skill.skill_level.level_name;
+    if (skill.level_name) return skill.level_name;
+    
+    // Fallback avec l'ID
+    const levelId = skill.actual_skill_level_id || skill.level_id;
+    return this.getSkillLevelName(levelId);
+  }
+
+  getSkillLevelValueSafe(skill: any): number {
+    if (!skill) return 0;
+    
+    // Différentes structures possibles
+    if (skill.SkillLevel?.value) return skill.SkillLevel.value;
+    if (skill.skill_level?.value) return skill.skill_level.value;
+    if (skill.value) return skill.value;
+    
+    // Fallback avec l'ID
+    const levelId = skill.actual_skill_level_id || skill.level_id;
+    return this.getSkillLevelValue(levelId);
+  }
+
+  getSkillLevelClass(levelValue: number): string {
+    if (levelValue <= 1) return 'bg-red-100 text-red-800';
+    if (levelValue <= 2) return 'bg-yellow-100 text-yellow-800';
+    if (levelValue <= 3) return 'bg-blue-100 text-blue-800';
+    if (levelValue <= 4) return 'bg-green-100 text-green-800';
+    return 'bg-purple-100 text-purple-800';
+  }
+
+  getFirstCharSafe(name: string | undefined): string {
+    if (!name || name.length === 0) return '?';
+    return name.charAt(0).toUpperCase();
   }
 
   // Méthode sécurisée pour formater les dates avec undefined

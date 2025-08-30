@@ -48,7 +48,7 @@
     <!-- Statistiques rapides -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div class="bg-blue-50 p-4 rounded-lg text-center">
-        <div class="text-2xl font-bold text-blue-600">{{ employee.skills?.length || 0 }}</div>
+        <div class="text-2xl font-bold text-blue-600">{{ getSkillsCount() }}</div>
         <div class="text-sm text-gray-600">Compétences</div>
       </div>
       <div class="bg-green-50 p-4 rounded-lg text-center">
@@ -69,7 +69,7 @@
     <div class="card mb-6">
       <div class="flex items-center space-x-6">
         <div class="w-24 h-24 bg-primary rounded-full flex items-center justify-center text-white text-3xl font-bold">
-          {{ employee.name.charAt(0).toUpperCase() }}
+          {{ getFirstCharSafe(employee.name) }}
         </div>
         <div>
           <h3 class="text-2xl font-semibold text-dark">{{ employee.name }}</h3>
@@ -214,59 +214,111 @@
           </button>
         </div>
 
-        <div *ngIf="skillsFormArray.length === 0" class="text-center text-gray-600 py-8">
-          Aucune compétence enregistrée.
+        <!-- Compétences organisées par type -->
+        <div *ngIf="hasSkillsSafe()" class="space-y-6">
+          <div *ngFor="let typeEntry of getSkillsByTypeEntries()" class="border rounded-lg p-4 bg-gray-50">
+            <h5 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+              <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mr-3">
+                {{ typeEntry.skills.length }}
+              </span>
+              {{ typeEntry.type }}
+            </h5>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div *ngFor="let skill of typeEntry.skills; let skillIndex = index" 
+                   class="border rounded-lg p-3 bg-white hover:shadow-md transition-shadow duration-200">
+                <div class="flex justify-between items-start mb-2">
+                  <div class="flex-1">
+                    <h6 class="font-semibold text-gray-900">{{ getSkillNameSafe(skill) }}</h6>
+                    <p class="text-sm text-gray-600">{{ getSkillTypeNameSafe(skill) }}</p>
+                  </div>
+                  <span [class]="'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ' + getSkillLevelClass(getSkillLevelValueSafe(skill))">
+                    {{ getSkillLevelNameSafe(skill) }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                  <div>
+                    <span class="font-medium">Acquise:</span>
+                    <p>{{ formatDateSafe(skill.acquired_date) }}</p>
+                  </div>
+                  <div>
+                    <span class="font-medium">Évaluée:</span>
+                    <p>{{ formatDateSafe(skill.last_evaluated_date) }}</p>
+                  </div>
+                </div>
+
+                <div *ngIf="skill.certification" class="mb-2">
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                    {{ skill.certification }}
+                  </span>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                  <button type="button" (click)="editSkill(skill)" 
+                          class="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors duration-150">
+                    Modifier
+                  </button>
+                  <button type="button" (click)="deleteSkill(skill)" 
+                          class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors duration-150">
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div formArrayName="skills" class="space-y-4">
-          <div *ngIf="hasSkillsSafe()" class="space-y-6">
-            <div *ngFor="let skillGroup of skillsFormArray.controls; let i = index" [formGroupName]="i" class="border rounded-lg p-4 bg-gray-50">
+        <!-- Mode édition : FormArray pour les compétences -->
+        <div *ngIf="isEditing" formArrayName="skills" class="space-y-4">
+          <div *ngFor="let skillGroup of skillsFormArray.controls; let i = index" 
+               [formGroupName]="i" class="border rounded-lg p-4 bg-gray-50">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Compétence *</label>
-                <select formControlName="skill_id" [disabled]="!isEditing"
-                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        [class.bg-gray-100]="!isEditing">
+                <select formControlName="skill_id"
+                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                   <option value="">Sélectionner une compétence</option>
                   <option *ngFor="let skill of skills" [value]="skill.id">{{ skill.name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Niveau *</label>
-                <select formControlName="actual_skill_level_id" [disabled]="!isEditing"
-                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        [class.bg-gray-100]="!isEditing">
+                <select formControlName="actual_skill_level_id"
+                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                   <option value="">Sélectionner un niveau</option>
                   <option *ngFor="let level of skillLevels" [value]="level.id">{{ level.level_name }}</option>
                 </select>
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Date d'acquisition</label>
-                <input type="date" formControlName="acquired_date" [readonly]="!isEditing"
-                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                       [class.bg-gray-100]="!isEditing">
+                <input type="date" formControlName="acquired_date"
+                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Certification</label>
-                <input type="text" formControlName="certification" [readonly]="!isEditing"
-                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                       [class.bg-gray-100]="!isEditing">
+                <input type="text" formControlName="certification"
+                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
               </div>
               <div>
                 <label class="block text-gray-700 text-sm font-bold mb-2">Dernière évaluation</label>
-                <input type="date" formControlName="last_evaluated_date" [readonly]="!isEditing"
-                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                       [class.bg-gray-100]="!isEditing">
+                <input type="date" formControlName="last_evaluated_date"
+                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
               </div>
               <div class="flex items-end">
-                <button *ngIf="isEditing" type="button" (click)="removeSkill(i)" 
+                <button type="button" (click)="removeSkill(i)" 
                         class="btn bg-red-500 text-white hover:bg-red-600 w-full">
                   Supprimer
                 </button>
               </div>
             </div>
-            </div>
           </div>
+        </div>
+
+        <!-- État vide -->
         <div *ngIf="!hasSkillsSafe()" class="text-center py-8 text-gray-500">
           <svg class="w-12 h-12 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
@@ -275,6 +327,7 @@
           <p class="text-sm text-gray-400 mt-1">Cliquez sur "Ajouter une compétence" pour commencer</p>
         </div>
       </div>
+
       <!-- Action Buttons -->
       <div *ngIf="isEditing" class="flex justify-end space-x-4 pt-4 border-t">
         <button type="button" (click)="toggleEdit()" class="btn btn-secondary">
