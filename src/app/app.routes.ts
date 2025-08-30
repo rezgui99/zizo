@@ -40,7 +40,6 @@ export const routes: Routes = [
   { path: 'cv-library', component: CvLibraryComponent, canActivate: [AuthGuard] },
   { path: 'skills-management', component: SkillsManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'hr'] } },
   { path: 'organigramme', component: OrganigrammeComponent, canActivate: [AuthGuard] },
-  { path: 'employee-skills', component: EmployeeSkillsComponent, canActivate: [AuthGuard] },
   { path: 'admin/users', component: UserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
   { path: 'job-offer/create', component: JobOfferComponent, canActivate: [AuthGuard] },
   { path: 'job-offers', component: JobOfferComponent, canActivate: [AuthGuard] },
