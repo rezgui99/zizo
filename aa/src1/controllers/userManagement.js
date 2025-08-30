@@ -56,6 +56,15 @@ const createUser = async (req, res) => {
       });
     }
 
+    // Si aucun rôle spécifié, assigner HR par défaut
+    let finalRoleIds = roleIds;
+    if (!finalRoleIds || finalRoleIds.length === 0) {
+      const hrRole = await Role.findOne({ where: { name: 'hr' }, transaction: t });
+      if (hrRole) {
+        finalRoleIds = [hrRole.id];
+      }
+    }
+
     // Créer l'utilisateur
     const user = await User.create({
       username,
@@ -68,13 +77,13 @@ const createUser = async (req, res) => {
     }, { transaction: t });
 
     // Assigner les rôles si fournis
-    if (roleIds.length > 0) {
+    if (finalRoleIds.length > 0) {
       const roles = await Role.findAll({
-        where: { id: roleIds, is_active: true },
+        where: { id: finalRoleIds, is_active: true },
         transaction: t
       });
 
-      if (roles.length !== roleIds.length) {
+      if (roles.length !== finalRoleIds.length) {
         await t.rollback();
         return res.status(400).json({
           error: 'Invalid roles',
