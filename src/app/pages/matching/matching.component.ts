@@ -9,11 +9,13 @@ import { JobDescription } from '../../models/job-description.model';
 import { Employee } from '../../models/employee.model';
 import { MatchingResult } from '../../models/matching.model';
 import { EmployeeCardComponent } from '../../components/employee-card/employee-card.component';
+import { AnalyticsService } from '../../services/analytics.service';
+import { ApplicationSuccessPrediction } from '../../models/analytics.model';
 
 @Component({
   selector: 'app-matching',
   standalone: true,
-  imports: [CommonModule, FormsModule, EmployeeCardComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './matching.component.html',
   styleUrls: ['./matching.component.css']
 })
@@ -35,6 +37,11 @@ export class MatchingComponent implements OnInit {
   inverseMatchingErrorMessage: string | null = null;
   autoAssignmentMessage: string | null = null;
 
+  // Prédictions de succès
+  successPredictions: ApplicationSuccessPrediction[] = [];
+  loadingPredictions: boolean = false;
+  predictionsMessage: string | null = null;
+
   // Paramètres d'affectation automatique
   minScoreForAssignment: number = 70;
   maxAssignments: number = 5;
@@ -47,7 +54,8 @@ export class MatchingComponent implements OnInit {
   constructor(
     private jobDescriptionService: JobDescriptionService,
     private employeeService: EmployeeService,
-    private matchingService: MatchingService
+    private matchingService: MatchingService,
+    private analyticsService: AnalyticsService
   ) { }
 
   ngOnInit(): void {
@@ -109,6 +117,7 @@ export class MatchingComponent implements OnInit {
     this.matchingService.getJobEmployeeSkillMatch(this.selectedJobId).subscribe({
       next: (results) => {
         this.matchingResults = results.sort((a, b) => b.score - a.score); // Sort by score descending
+        this.calculateSuccessPredictions();
         this.loadingMatching = false;
       },
       error: (err) => {
@@ -117,6 +126,64 @@ export class MatchingComponent implements OnInit {
         this.loadingMatching = false;
       }
     });
+  }
+
+  calculateSuccessPredictions(): void {
+    if (!this.selectedJobId || this.matchingResults.length === 0) return;
+
+    this.loadingPredictions = true;
+    this.predictionsMessage = null;
+    this.successPredictions = [];
+
+    const predictions = this.matchingResults.slice(0, 5).map(result => ({
+      employee_id: result.employee_id,
+      job_description_id: this.selectedJobId!
+    }));
+
+    this.analyticsService.predictMultipleApplications(predictions).subscribe({
+      next: (predictions) => {
+        this.successPredictions = predictions;
+        this.loadingPredictions = false;
+      },
+      error: (err) => {
+        console.error('Error calculating predictions:', err);
+        this.predictionsMessage = 'Erreur lors du calcul des prédictions.';
+        this.loadingPredictions = false;
+      }
+    });
+  }
+
+  getPredictionForEmployee(employeeId: number): ApplicationSuccessPrediction | undefined {
+    return this.successPredictions.find((p: ApplicationSuccessPrediction) => p.employee_id === employeeId);
+  }
+
+  getPredictionClass(probability: number): string {
+    if (probability >= 80) return 'text-green-600';
+    if (probability >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+
+  getConfidenceClass(level: string): string {
+    switch (level) {
+      case 'high': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  getConfidenceLabel(level: string): string {
+    switch (level) {
+      case 'high': return 'Confiance élevée';
+      case 'medium': return 'Confiance moyenne';
+      case 'low': return 'Confiance faible';
+      default: return 'Confiance inconnue';
+    }
+  }
+
+  getEmployeeNameFromPrediction(prediction: ApplicationSuccessPrediction): string {
+    const result = this.matchingResults.find(r => r.employee_id === prediction.employee_id);
+    return result ? this.getEmployeeFromResult(result).name : 'Employé inconnu';
   }
 
   performInverseMatching(): void {

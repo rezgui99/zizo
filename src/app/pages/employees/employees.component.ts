@@ -726,7 +726,7 @@ export class EmployeesComponent implements OnInit {
   }
 
   getSkillsByTypeCount(employee: Employee): number {
-    if (!employee?.skills || !Array.isArray(employee.skills)) return [];
+    if (!employee?.skills || !Array.isArray(employee.skills)) return 0;
     
     const types = new Set<string>();
     employee.skills.forEach(skill => {

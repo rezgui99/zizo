@@ -340,7 +340,6 @@ export class ProfileComponent implements OnInit {
     return Object.keys(skillsByType).length;
   }
 
-
   // Méthode sécurisée pour formater les dates avec undefined
   formatDateSafe(dateString: string | null | undefined): string {
     if (!dateString) return 'Non définie';

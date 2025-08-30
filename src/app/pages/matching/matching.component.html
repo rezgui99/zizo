@@ -106,15 +106,14 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div *ngFor="let prediction of successPredictions" class="bg-white p-3 rounded-lg border">
           <div class="flex justify-between items-center mb-2">
-            <span class="font-medium text-gray-900">{{ getEmployeeFromResult(matchingResults.find(r => r.employee_id === prediction.employee_id)!)?.name }}</span>
-            <span [class]="'text-lg font-bold ' + getPredictionClass(prediction.success_probability)">
+            <span class="font-medium text-gray-900">{{ getEmployeeNameFromPrediction(prediction) }}</span>
+            <span class="text-lg font-bold" [ngClass]="getPredictionClass(prediction.success_probability)">
               {{ prediction.success_probability }}%
             </span>
           </div>
           <div class="flex justify-between items-center">
-            <span [class]="'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ' + getConfidenceClass(prediction.confidence_level)">
-              {{ prediction.confidence_level === 'high' ? 'Confiance élevée' : 
-                 prediction.confidence_level === 'medium' ? 'Confiance moyenne' : 'Confiance faible' }}
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" [ngClass]="getConfidenceClass(prediction.confidence_level)">
+              {{ getConfidenceLabel(prediction.confidence_level) }}
             </span>
             <span class="text-xs text-gray-500">Score entretien: {{ prediction.estimated_interview_score }}%</span>
           </div>
@@ -142,12 +141,12 @@
         <div *ngIf="getPredictionForEmployee(result.employee_id)" class="mb-4 p-3 bg-purple-50 rounded-lg">
           <div class="flex justify-between items-center mb-2">
             <span class="text-sm font-medium text-purple-800">Prédiction de succès</span>
-            <span [class]="'text-lg font-bold ' + getPredictionClass(getPredictionForEmployee(result.employee_id)!.success_probability)">
-              {{ getPredictionForEmployee(result.employee_id)!.success_probability }}%
+            <span class="text-lg font-bold" [ngClass]="getPredictionClass(getPredictionForEmployee(result.employee_id)?.success_probability || 0)">
+              {{ getPredictionForEmployee(result.employee_id)?.success_probability }}%
             </span>
           </div>
           <div class="text-xs text-purple-600">
-            Confiance: {{ getPredictionForEmployee(result.employee_id)!.confidence_level }}
+            Confiance: {{ getConfidenceLabel(getPredictionForEmployee(result.employee_id)?.confidence_level || 'low') }}
           </div>
         </div>
 
