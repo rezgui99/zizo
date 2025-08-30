@@ -156,7 +156,7 @@ const getEmployeeSkillRecommendations = async (req, res) => {
     // Analyser la demande pour chaque compétence
     allRequiredSkills.forEach(reqSkill => {
       const skillId = reqSkill.skill_id;
-      const requiredLevel = reqSkill.SkillLevel?.value || 0;
+      const requiredLevel = reqSkill.SkillLevel?.value || 2;
       const currentLevel = employeeSkillsMap.get(skillId) || 0;
       
       if (!skillDemandMap.has(skillId)) {

@@ -335,6 +335,11 @@ export class ProfileComponent implements OnInit {
     return skillsByType;
   }
 
+  getSkillsByTypeCount(): number {
+    const skillsByType = this.getSkillsByType();
+    return Object.keys(skillsByType).length;
+  }
+
 
   // Méthode sécurisée pour formater les dates avec undefined
   formatDateSafe(dateString: string | null | undefined): string {
