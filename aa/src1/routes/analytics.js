@@ -27,4 +27,7 @@ router.get("/employee/:employeeId/recommendations", requireAdminOrHR, getEmploye
 // Prédiction de succès
 router.post("/predict-success", requireAdminOrHR, predictApplicationSuccess);
 
+// Prédictions en lot
+router.post("/predict-success/batch", requireAdminOrHR, predictMultipleApplications);
+
 module.exports = router;

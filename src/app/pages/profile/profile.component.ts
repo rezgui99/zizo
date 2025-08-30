@@ -336,17 +336,27 @@ export class ProfileComponent implements OnInit {
   }
 
   getSkillsByTypeCount(): number {
-    if (!this.hasSkillsSafe()) return 0;
+    const skillsByType = this.getSkillsByType();
+    return Object.keys(skillsByType).length;
+  }
+
+  getSkillsByType(): { [key: string]: any[] } {
+    if (!this.hasSkillsSafe()) return {};
     
-    const types = new Set<string>();
+    const skillsByType: { [key: string]: any[] } = {};
+    
     this.getSkillsSafe().forEach(skill => {
-      const typeName = this.getSkillTypeNameSafe(skill);
-      if (typeName !== 'Type inconnu') {
-        types.add(typeName);
+      const skillObj = this.skills.find(s => s.id === skill.skill_id);
+      const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
+      const typeName = typeObj?.type_name || 'Autre';
+      
+      if (!skillsByType[typeName]) {
+        skillsByType[typeName] = [];
       }
+      skillsByType[typeName].push(skill);
     });
     
-    return types.size;
+    return skillsByType;
   }
 
   getSkillsByTypeEntries(): Array<{type: string, skills: any[]}> {
