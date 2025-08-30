@@ -88,9 +88,12 @@ export class RegisterComponent implements OnInit {
       confirmPassword: this.registerForm.value.confirmPassword
     };
 
+    console.log('Données d\'inscription envoyées:', registerData);
     this.authService.register(registerData).subscribe({
       next: (response) => {
         console.log('Registration successful:', response);
+        console.log('Utilisateur créé avec le rôle:', response.user.role);
+        console.log('Rôles disponibles:', response.user.roles);
         this.router.navigate(['/home']);
       },
       error: (error: ApiError) => {

@@ -13,16 +13,18 @@ module.exports = (sequelize, DataTypes) => {
         as: "roles",
       });
 
-      // Relations pour l'audit
-      User.hasMany(models.AuditLog, {
-        foreignKey: "user_id",
-        as: "auditLogs"
-      });
+      // Relations pour l'audit - seulement si AuditLog existe
+      if (models.AuditLog) {
+        User.hasMany(models.AuditLog, {
+          foreignKey: "user_id",
+          as: "auditLogs"
+        });
 
-      User.hasMany(models.AuditLog, {
-        foreignKey: "modified_by",
-        as: "modificationsPerformed"
-      });
+        User.hasMany(models.AuditLog, {
+          foreignKey: "modified_by",
+          as: "modificationsPerformed"
+        });
+      }
     }
 
     // Instance method to check password

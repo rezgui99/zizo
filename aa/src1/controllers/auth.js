@@ -56,14 +56,30 @@ const register = async (req, res) => {
       return res.status(409).json({ error: 'Un utilisateur avec cet email existe déjà' });
     }
 
+    // Générer un username unique basé sur l'email
+    const username = email.split('@')[0] + Math.floor(Math.random() * 1000);
+
     // Création utilisateur
     const user = await User.create({
+      username,
       firstName,
       lastName,
       email,
       password,
+      isActive: true,
+      emailVerified: true,
       emailVerificationToken: crypto.randomBytes(32).toString('hex')
     }, { transaction: t });
+
+    // Assigner le rôle HR par défaut aux nouveaux utilisateurs
+    const hrRole = await db.Role.findOne({ where: { name: 'hr' }, transaction: t });
+    if (hrRole) {
+      await db.UserRole.create({
+        user_id: user.id,
+        role_id: hrRole.id,
+        assigned_by: user.id // Auto-assigné
+      }, { transaction: t });
+    }
 
     const token = generateToken(user.id);
 
@@ -76,6 +92,8 @@ const register = async (req, res) => {
         html: `
           <h1>Bienvenue ${firstName} ${lastName}!</h1>
           <p>Votre compte a été créé avec succès.</p>
+          <p>Votre nom d'utilisateur : <strong>${username}</strong></p>
+          <p>Votre rôle : <strong>HR</strong></p>
           <p>Vous pouvez maintenant vous connecter à votre espace.</p>
         `
       });
@@ -84,12 +102,44 @@ const register = async (req, res) => {
       // Ne pas bloquer l'inscription si l'email échoue
     }
 
+    // Récupérer l'utilisateur avec ses rôles pour la réponse
+    const userWithRoles = await User.findByPk(user.id, {
+      include: [{
+        model: db.Role,
+        as: 'roles',
+        where: { is_active: true },
+        required: false,
+        through: { attributes: [] }
+      }],
+      transaction: t
+    });
+
+    const userRoles = userWithRoles?.roles?.map(role => role.name) || [];
+    const userResponse = {
+      ...user.toJSON(),
+      role: userRoles.includes('admin') ? 'admin' : 'hr',
+      roles: userRoles
+    };
+
     await t.commit();
-    res.status(201).json({ message: 'Utilisateur créé avec succès', user: user.toJSON(), token });
+    res.status(201).json({ message: 'Utilisateur créé avec succès', user: userResponse, token });
 
   } catch (error) {
     await t.rollback();
     console.error('Erreur inscription:', error);
+    
+    // Gestion des erreurs spécifiques
+    if (error.name === 'SequelizeValidationError') {
+      return res.status(400).json({ 
+        error: 'Données invalides', 
+        details: error.errors.map(err => err.message) 
+      });
+    }
+    
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ error: 'Cet email ou nom d\'utilisateur existe déjà' });
+    }
+    
     res.status(500).json({ error: 'Erreur lors de la création du compte' });
   }
 };
