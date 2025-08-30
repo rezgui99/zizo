@@ -149,9 +149,7 @@ const login = async (req, res) => {
     
     // Récupérer tous les rôles actifs de l'utilisateur
     const userRoles = userWithRoles?.roles?.map(role => role.name) || [];
-    const primaryRole = userRoles.includes('admin') ? 'admin' : 
-                       userRoles.includes('hr') ? 'hr' : 
-                       userRoles.includes('manager') ? 'manager' : 'employee';
+    const primaryRole = userRoles.includes('admin') ? 'admin' : 'hr';
     
     const userResponse = {
       ...user.toJSON(),

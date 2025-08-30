@@ -272,10 +272,7 @@
             <div *ngFor="let role of roles" class="flex items-center">
               <input type="checkbox" [id]="'role-' + role.id" 
                      [value]="role.id" 
-                     (change)="onRoleCheckboxChange($event, role.id)"
-                     class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                     [appTooltip]="role.description || 'Rôle ' + role.name">
-              <label [for]="'role-' + role.id" class="ml-2 block text-sm text-gray-900">
+                     [class]="role.name === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'">
                 {{ role.name }}
               </label>
             </div>

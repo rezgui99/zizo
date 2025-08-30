@@ -473,11 +473,9 @@ export class EnhancedUserManagementComponent implements OnInit {
   getRoleBadgeClass(roleName: string): string {
     const classes: { [key: string]: string } = {
       'admin': 'bg-red-100 text-red-800',
-      'hr': 'bg-blue-100 text-blue-800',
-      'manager': 'bg-green-100 text-green-800',
-      'employee': 'bg-gray-100 text-gray-800'
+      'hr': 'bg-blue-100 text-blue-800'
     };
-    return classes[roleName] || 'bg-gray-100 text-gray-800';
+    return classes[roleName] || 'bg-blue-100 text-blue-800';
   }
 
   getStatusBadgeClass(isActive: boolean): string {

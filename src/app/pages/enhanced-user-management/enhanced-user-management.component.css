@@ -59,6 +59,17 @@
   transform: translateX(2px);
 }
 
+/* Role badges */
+.role-admin {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.role-hr {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
 /* Role badges with enhanced styling */
 .role-badge {
   position: relative;
