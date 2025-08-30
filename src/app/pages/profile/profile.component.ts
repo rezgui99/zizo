@@ -123,8 +123,8 @@ export class ProfileComponent implements OnInit {
     const skillsArray = this.profileForm.get('skills') as FormArray;
     skillsArray.clear();
     
-    if (this.employee.skills) {
-      this.employee.skills.forEach(empSkill => {
+    if (this.hasSkillsSafe()) {
+      this.getSkillsSafe().forEach(empSkill => {
         const skillGroup = this.formBuilder.group({
           skill_id: [empSkill.skill_id, Validators.required],
           actual_skill_level_id: [empSkill.actual_skill_level_id, Validators.required],
