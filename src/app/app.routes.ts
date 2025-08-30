@@ -44,8 +44,6 @@ export const routes: Routes = [
   { path: 'job-offer/create', component: JobOfferComponent, canActivate: [AuthGuard] },
   { path: 'job-offers', component: JobOfferComponent, canActivate: [AuthGuard] },
   { path: 'admin/users-enhanced', component: EnhancedUserManagementComponent, canActivate: [AuthGuard], data: { roles: ['admin'] } },
-  
-  
   // Unauthorized page
   { path: 'unauthorized', loadComponent: () => import('./pages/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent) },
   

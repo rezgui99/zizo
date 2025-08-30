@@ -22,18 +22,41 @@ import { EmployeeSkillService } from '../../services/employee-skill.service';
 })
 export class EmployeesComponent implements OnInit {
   employees: Employee[] = [];
+  filteredEmployees: Employee[] = [];
   employeeForm: FormGroup;
+  skillForm: FormGroup;
   jobDescriptions: JobDescription[] = [];
   skills: Skill[] = [];
   skillLevels: SkillLevel[] = [];
+  
+  // États des formulaires
   showAddForm: boolean = false;
+  showSkillForm: boolean = false;
   editingEmployee: Employee | null = null;
+  editingSkill: any = null;
+  selectedEmployee: Employee | null = null;
+  
+  // États de chargement
   loading: boolean = false;
   loadingJobs: boolean = false;
+  loadingSkills: boolean = false;
+  savingEmployee: boolean = false;
+  savingSkill: boolean = false;
+  
+  // Messages
   errorMessage: string | null = null;
   successMessage: string | null = null;
+  skillErrorMessage: string | null = null;
+  skillSuccessMessage: string | null = null;
   
-  // Nouvelles propriétés pour l'affectation automatique
+  // Filtres et recherche
+  searchQuery: string = '';
+  selectedPosition: string = '';
+  selectedLocation: string = '';
+  positionOptions: string[] = [];
+  locationOptions: string[] = [];
+  
+  // Affectation automatique
   showAutoAssignModal: boolean = false;
   autoAssigningEmployee: Employee | null = null;
   bestJobMatches: MatchingResult[] = [];
@@ -57,7 +80,16 @@ export class EmployeesComponent implements OnInit {
       gender: [''],
       location: [''],
       notes: [''],
-      skills: this.formBuilder.array([]) // FormArray pour les compétences
+      skills: this.formBuilder.array([])
+    });
+
+    this.skillForm = this.formBuilder.group({
+      employee_id: ['', Validators.required],
+      skill_id: ['', Validators.required],
+      actual_skill_level_id: ['', Validators.required],
+      acquired_date: [''],
+      certification: [''],
+      last_evaluated_date: ['']
     });
   }
 
@@ -67,72 +99,63 @@ export class EmployeesComponent implements OnInit {
     this.loadJobDescriptions();
   }
 
+  // ==================== CRUD EMPLOYÉS ====================
+
   loadEmployees(): void {
     this.loading = true;
     this.errorMessage = null;
     this.employeeService.getEmployees().subscribe({
       next: (employees) => {
         this.employees = employees;
+        this.filteredEmployees = [...employees];
+        this.extractFilterOptions();
         this.loading = false;
       },
       error: (err) => {
         console.error('Error loading employees:', err);
-        this.errorMessage = 'Erreur lors du chargement des employés. Veuillez réessayer plus tard.';
+        this.errorMessage = 'Erreur lors du chargement des employés.';
         this.loading = false;
       }
     });
   }
 
-  loadSkillsData(): void {
-    Promise.all([
-      this.skillService.getSkills().toPromise(),
-      this.skillService.getSkillLevels().toPromise()
-    ]).then(([skills, skillLevels]) => {
-      this.skills = skills || [];
-      this.skillLevels = skillLevels || [];
-    }).catch(err => {
-      console.error('Error loading skills data:', err);
+  showAddEmployeeForm(): void {
+    this.showAddForm = true;
+    this.editingEmployee = null;
+    this.employeeForm.reset();
+    this.clearSkillsArray();
+    this.clearMessages();
+  }
+
+  editEmployee(employee: Employee): void {
+    this.editingEmployee = employee;
+    this.showAddForm = true;
+    
+    this.employeeForm.patchValue({
+      name: employee.name,
+      position: employee.position,
+      email: employee.email,
+      hire_date: employee.hire_date,
+      phone: employee.phone || '',
+      gender: employee.gender || '',
+      location: employee.location || '',
+      notes: employee.notes || '',
     });
+
+    this.clearSkillsArray();
+    if (employee.skills && employee.skills.length > 0) {
+      employee.skills.forEach(empSkill => {
+        this.addSkillToForm(empSkill);
+      });
+    }
+    this.clearMessages();
   }
 
-  loadJobDescriptions(): void {
-    this.loadingJobs = true;
-    this.jobDescriptionService.getJobDescriptions().subscribe({
-      next: (jobDescriptions) => {
-        this.jobDescriptions = jobDescriptions;
-        this.loadingJobs = false;
-      },
-      error: (err) => {
-        console.error('Error loading job descriptions:', err);
-        this.loadingJobs = false;
-      }
-    });
-  }
-
-  get skillsFormArray(): FormArray {
-    return this.employeeForm.get('skills') as FormArray;
-  }
-
-  addSkill(): void {
-    const skillGroup = this.formBuilder.group({
-      skill_id: ['', Validators.required],
-      actual_skill_level_id: ['', Validators.required],
-      acquired_date: [''],
-      certification: [''],
-      last_evaluated_date: ['']
-    });
-    this.skillsFormArray.push(skillGroup);
-  }
-
-  removeSkill(index: number): void {
-    this.skillsFormArray.removeAt(index);
-  }
-
-  onSubmit(): void {
+  onEmployeeSubmit(): void {
     if (this.employeeForm.valid) {
+      this.savingEmployee = true;
       const formValue = this.employeeForm.value;
       
-      // Filtrer et préparer les compétences valides
       const skillsData = formValue.skills
         .filter((skill: any) => skill.skill_id && skill.actual_skill_level_id)
         .map((skill: any) => ({
@@ -155,8 +178,6 @@ export class EmployeesComponent implements OnInit {
         skills: skillsData
       } as Employee;
       
-      console.log('Données employé à envoyer:', employeeData);
-      
       if (this.editingEmployee) {
         this.employeeService.updateEmployee(this.editingEmployee.id!, employeeData).subscribe({
           next: (updatedEmployee) => {
@@ -164,78 +185,44 @@ export class EmployeesComponent implements OnInit {
             if (index !== -1) {
               this.employees[index] = updatedEmployee;
             }
+            this.applyFilters();
             this.successMessage = 'Employé mis à jour avec succès';
-            this.cancelEdit();
-            this.errorMessage = null;
-            console.log('✅ Employé mis à jour avec succès');
+            this.cancelEmployeeEdit();
+            this.savingEmployee = false;
           },
           error: (err) => {
             console.error('Error updating employee:', err);
-            this.errorMessage = `❌ Erreur mise à jour: ${err.error?.message || err.message}`;
+            this.errorMessage = `Erreur mise à jour: ${err.error?.message || err.message}`;
+            this.savingEmployee = false;
           }
         });
       } else {
         this.employeeService.createEmployee(employeeData).subscribe({
           next: (newEmployee) => {
             this.employees.push(newEmployee);
+            this.applyFilters();
+            this.extractFilterOptions();
             this.successMessage = 'Employé créé avec succès';
-            this.cancelEdit();
-            this.errorMessage = null;
-            console.log('✅ Employé créé avec succès');
+            this.cancelEmployeeEdit();
+            this.savingEmployee = false;
           },
           error: (err) => {
             console.error('Error creating employee:', err);
-            this.errorMessage = `❌ Erreur création: ${err.error?.message || err.message}`;
+            this.errorMessage = `Erreur création: ${err.error?.message || err.message}`;
+            this.savingEmployee = false;
           }
         });
       }
-    } else {
-      console.log('❌ Formulaire invalide:', this.employeeForm.errors);
-      this.errorMessage = 'Veuillez remplir tous les champs obligatoires.';
-    }
-  }
-
-  editEmployee(employee: Employee): void {
-    this.editingEmployee = employee;
-    this.showAddForm = true;
-    
-    // Remplir les champs de base
-    this.employeeForm.patchValue({
-      name: employee.name,
-      position: employee.position,
-      email: employee.email,
-      hire_date: employee.hire_date,
-      phone: employee.phone || '',
-      gender: employee.gender || '',
-      location: employee.location || '',
-      notes: employee.notes || '',
-    });
-
-    // Vider le FormArray des compétences
-    while (this.skillsFormArray.length !== 0) {
-      this.skillsFormArray.removeAt(0);
-    }
-
-    // Remplir les compétences existantes
-    if (employee.skills && employee.skills.length > 0) {
-      employee.skills.forEach(empSkill => {
-        const skillGroup = this.formBuilder.group({
-          skill_id: [empSkill.skill_id, Validators.required],
-          actual_skill_level_id: [empSkill.actual_skill_level_id, Validators.required],
-          acquired_date: [empSkill.acquired_date || ''],
-          certification: [empSkill.certification || ''],
-          last_evaluated_date: [empSkill.last_evaluated_date || '']
-        });
-        this.skillsFormArray.push(skillGroup);
-      });
     }
   }
 
   deleteEmployee(employee: Employee): void {
-    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} ?`)) {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${employee.name} et toutes ses compétences ?`)) {
       this.employeeService.deleteEmployee(employee.id!).subscribe({
         next: () => {
           this.employees = this.employees.filter(emp => emp.id !== employee.id);
+          this.applyFilters();
+          this.extractFilterOptions();
           this.successMessage = 'Employé supprimé avec succès';
           this.errorMessage = null;
         },
@@ -247,39 +234,229 @@ export class EmployeesComponent implements OnInit {
     }
   }
 
-  cancelEdit(): void {
+  cancelEmployeeEdit(): void {
     this.editingEmployee = null;
     this.showAddForm = false;
     this.employeeForm.reset();
-    
-    // Vider le FormArray des compétences
+    this.clearSkillsArray();
+    this.clearMessages();
+  }
+
+  // ==================== CRUD COMPÉTENCES ====================
+
+  get skillsFormArray(): FormArray {
+    return this.employeeForm.get('skills') as FormArray;
+  }
+
+  addSkillToForm(existingSkill?: any): void {
+    const skillGroup = this.formBuilder.group({
+      skill_id: [existingSkill?.skill_id || '', Validators.required],
+      actual_skill_level_id: [existingSkill?.actual_skill_level_id || '', Validators.required],
+      acquired_date: [existingSkill?.acquired_date || ''],
+      certification: [existingSkill?.certification || ''],
+      last_evaluated_date: [existingSkill?.last_evaluated_date || '']
+    });
+    this.skillsFormArray.push(skillGroup);
+  }
+
+  removeSkillFromForm(index: number): void {
+    this.skillsFormArray.removeAt(index);
+  }
+
+  clearSkillsArray(): void {
     while (this.skillsFormArray.length !== 0) {
       this.skillsFormArray.removeAt(0);
     }
-    
-    this.errorMessage = null;
-    this.successMessage = null;
   }
 
-  private parseIntegerField(value: any): number | null {
-    if (!value || value === '' || value === 'null' || value === 'undefined') {
-      return null;
+  // Gestion des compétences individuelles pour employés existants
+  showAddSkillForm(employee: Employee): void {
+    this.selectedEmployee = employee;
+    this.showSkillForm = true;
+    this.editingSkill = null;
+    this.skillForm.patchValue({
+      employee_id: employee.id
+    });
+    this.skillForm.get('skill_id')?.setValue('');
+    this.skillForm.get('actual_skill_level_id')?.setValue('');
+    this.skillForm.get('acquired_date')?.setValue('');
+    this.skillForm.get('certification')?.setValue('');
+    this.skillForm.get('last_evaluated_date')?.setValue('');
+    this.clearSkillMessages();
+  }
+
+  editEmployeeSkill(employee: Employee, skill: any): void {
+    this.selectedEmployee = employee;
+    this.editingSkill = skill;
+    this.showSkillForm = true;
+    this.skillForm.patchValue({
+      employee_id: employee.id,
+      skill_id: skill.skill_id,
+      actual_skill_level_id: skill.actual_skill_level_id,
+      acquired_date: skill.acquired_date || '',
+      certification: skill.certification || '',
+      last_evaluated_date: skill.last_evaluated_date || ''
+    });
+    this.clearSkillMessages();
+  }
+
+  onSkillSubmit(): void {
+    if (this.skillForm.valid && this.selectedEmployee) {
+      this.savingSkill = true;
+      const skillData = {
+        employee_id: this.selectedEmployee.id!,
+        skill_id: parseInt(this.skillForm.value.skill_id, 10),
+        actual_skill_level_id: parseInt(this.skillForm.value.actual_skill_level_id, 10),
+        acquired_date: this.skillForm.value.acquired_date || null,
+        certification: this.skillForm.value.certification || null,
+        last_evaluated_date: this.skillForm.value.last_evaluated_date || null
+      };
+
+      if (this.editingSkill) {
+        // Mise à jour d'une compétence existante
+        this.employeeSkillService.update(
+          this.editingSkill.employee_id,
+          this.editingSkill.skill_id,
+          skillData
+        ).subscribe({
+          next: () => {
+            this.skillSuccessMessage = 'Compétence mise à jour avec succès';
+            this.loadEmployees(); // Recharger pour voir les changements
+            this.cancelSkillEdit();
+            this.savingSkill = false;
+          },
+          error: (err) => {
+            console.error('Error updating skill:', err);
+            this.skillErrorMessage = `Erreur mise à jour: ${err.error?.message || err.message}`;
+            this.savingSkill = false;
+          }
+        });
+      } else {
+        // Création d'une nouvelle compétence
+        this.employeeSkillService.create(skillData).subscribe({
+          next: () => {
+            this.skillSuccessMessage = 'Compétence ajoutée avec succès';
+            this.loadEmployees(); // Recharger pour voir les changements
+            this.cancelSkillEdit();
+            this.savingSkill = false;
+          },
+          error: (err) => {
+            console.error('Error creating skill:', err);
+            this.skillErrorMessage = `Erreur création: ${err.error?.message || err.message}`;
+            this.savingSkill = false;
+          }
+        });
+      }
     }
-    const parsed = parseInt(value, 10);
-    return isNaN(parsed) ? null : parsed;
   }
 
-  getSkillName(skillId: number): string {
-    const skill = this.skills.find(s => s.id === skillId);
-    return skill ? skill.name : 'Compétence inconnue';
+  deleteEmployeeSkill(employee: Employee, skill: any): void {
+    const skillName = this.getSkillName(skill.skill_id);
+    if (window.confirm(`Supprimer la compétence "${skillName}" de ${employee.name} ?`)) {
+      this.employeeSkillService.delete(employee.id!, skill.skill_id).subscribe({
+        next: () => {
+          // Mettre à jour localement
+          if (employee.skills) {
+            const skillIndex = employee.skills.findIndex(s => s.skill_id === skill.skill_id);
+            if (skillIndex !== -1) {
+              employee.skills.splice(skillIndex, 1);
+            }
+          }
+          this.skillSuccessMessage = 'Compétence supprimée avec succès';
+        },
+        error: (err) => {
+          console.error('Error deleting skill:', err);
+          this.skillErrorMessage = 'Erreur lors de la suppression de la compétence.';
+        }
+      });
+    }
   }
 
-  getSkillLevelName(levelId: number): string {
-    const level = this.skillLevels.find(l => l.id === levelId);
-    return level ? level.level_name : 'Niveau inconnu';
+  cancelSkillEdit(): void {
+    this.showSkillForm = false;
+    this.editingSkill = null;
+    this.selectedEmployee = null;
+    this.skillForm.reset();
+    this.clearSkillMessages();
   }
 
-  // Nouvelle méthode pour trouver le meilleur poste pour un employé
+  // ==================== FILTRES ET RECHERCHE ====================
+
+  extractFilterOptions(): void {
+    const positions = new Set<string>();
+    const locations = new Set<string>();
+
+    this.employees.forEach(emp => {
+      if (emp.position) positions.add(emp.position);
+      if (emp.location) locations.add(emp.location);
+    });
+
+    this.positionOptions = Array.from(positions).sort();
+    this.locationOptions = Array.from(locations).sort();
+  }
+
+  applyFilters(): void {
+    this.filteredEmployees = this.employees.filter(emp => {
+      const matchesSearch = !this.searchQuery || 
+        emp.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        emp.email.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        emp.position.toLowerCase().includes(this.searchQuery.toLowerCase());
+      
+      const matchesPosition = !this.selectedPosition || emp.position === this.selectedPosition;
+      const matchesLocation = !this.selectedLocation || emp.location === this.selectedLocation;
+
+      return matchesSearch && matchesPosition && matchesLocation;
+    });
+  }
+
+  onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  onFilterChange(): void {
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchQuery = '';
+    this.selectedPosition = '';
+    this.selectedLocation = '';
+    this.filteredEmployees = [...this.employees];
+  }
+
+  // ==================== DONNÉES AUXILIAIRES ====================
+
+  loadSkillsData(): void {
+    this.loadingSkills = true;
+    Promise.all([
+      this.skillService.getSkills().toPromise(),
+      this.skillService.getSkillLevels().toPromise()
+    ]).then(([skills, skillLevels]) => {
+      this.skills = skills || [];
+      this.skillLevels = skillLevels || [];
+      this.loadingSkills = false;
+    }).catch(err => {
+      console.error('Error loading skills data:', err);
+      this.loadingSkills = false;
+    });
+  }
+
+  loadJobDescriptions(): void {
+    this.loadingJobs = true;
+    this.jobDescriptionService.getJobDescriptions().subscribe({
+      next: (jobDescriptions) => {
+        this.jobDescriptions = jobDescriptions;
+        this.loadingJobs = false;
+      },
+      error: (err) => {
+        console.error('Error loading job descriptions:', err);
+        this.loadingJobs = false;
+      }
+    });
+  }
+
+  // ==================== MATCHING ET AFFECTATION ====================
+
   findBestJobForEmployee(employee: Employee): void {
     this.autoAssigningEmployee = employee;
     this.showAutoAssignModal = true;
@@ -287,11 +464,10 @@ export class EmployeesComponent implements OnInit {
     this.autoAssignMessage = null;
     this.bestJobMatches = [];
 
-    // Utiliser la méthode alternative car le backend n'a probablement pas l'endpoint spécifique
     this.matchingService.findBestJobForEmployeeAlternative(employee.id!, this.jobDescriptions)
       .subscribe({
         next: (matches) => {
-          this.bestJobMatches = matches.slice(0, 5); // Top 5 des meilleurs matches
+          this.bestJobMatches = matches.slice(0, 5);
           this.loadingBestMatches = false;
           
           if (this.bestJobMatches.length === 0) {
@@ -306,7 +482,6 @@ export class EmployeesComponent implements OnInit {
       });
   }
 
-  // Affecter l'employé au poste sélectionné
   assignToBestJob(jobId: number, score: number): void {
     if (!this.autoAssigningEmployee) return;
 
@@ -319,17 +494,9 @@ export class EmployeesComponent implements OnInit {
     this.employeeService.assignEmployeeToJobDescription(this.autoAssigningEmployee.id!, jobId)
       .subscribe({
         next: () => {
-          // Mettre à jour l'employé localement
-          const index = this.employees.findIndex(emp => emp.id === this.autoAssigningEmployee!.id);
-          if (index !== -1) {
-            // Mettre à jour l'employé avec la nouvelle affectation
-            this.loadEmployees();
-          }
-          
           this.autoAssignMessage = `✅ ${this.autoAssigningEmployee!.name} a été affecté(e) avec succès !`;
           this.bestJobMatches = [];
           
-          // Fermer le modal après 2 secondes
           setTimeout(() => {
             this.closeAutoAssignModal();
           }, 2000);
@@ -341,7 +508,6 @@ export class EmployeesComponent implements OnInit {
       });
   }
 
-  // Fermer le modal d'affectation automatique
   closeAutoAssignModal(): void {
     this.showAutoAssignModal = false;
     this.autoAssigningEmployee = null;
@@ -350,55 +516,23 @@ export class EmployeesComponent implements OnInit {
     this.loadingBestMatches = false;
   }
 
-  // Obtenir le nom du poste à partir de l'ID
-  getJobNameFromId(jobId: number): string {
-    const job = this.jobDescriptions.find(j => j.id === jobId);
-    return job ? job.emploi : 'Poste inconnu';
+  // ==================== UTILITAIRES ====================
+
+  getSkillName(skillId: number): string {
+    const skill = this.skills.find(s => s.id === skillId);
+    return skill ? skill.name : 'Compétence inconnue';
   }
 
-  // Obtenir la filière du poste à partir de l'ID
-  getJobFiliereFromId(jobId: number): string {
-    const job = this.jobDescriptions.find(j => j.id === jobId);
-    return job ? job.filiere_activite : 'Filière inconnue';
+  getSkillLevelName(levelId: number): string {
+    const level = this.skillLevels.find(l => l.id === levelId);
+    return level ? level.level_name : 'Niveau inconnu';
   }
 
-  // Supprimer une compétence d'un employé
-  removeEmployeeSkill(employee: Employee, skillIndex: number): void {
-    if (!employee.skills || skillIndex < 0 || skillIndex >= employee.skills.length) return;
-
-    const skill = employee.skills[skillIndex];
-    if (window.confirm(`Supprimer la compétence "${this.getSkillName(skill.skill_id)}" ?`)) {
-      this.employeeSkillService.delete(employee.id!, skill.skill_id).subscribe({
-        next: () => {
-          // Mettre à jour localement
-          employee.skills!.splice(skillIndex, 1);
-          this.successMessage = 'Compétence supprimée avec succès';
-        },
-        error: (err) => {
-          console.error('Error deleting skill:', err);
-          this.errorMessage = 'Erreur lors de la suppression de la compétence.';
-        }
-      });
-    }
+  getSkillLevelValue(levelId: number): number {
+    const level = this.skillLevels.find(l => l.id === levelId);
+    return level ? level.value : 0;
   }
 
-  // Ajouter une compétence à un employé existant
-  addSkillToEmployee(employee: Employee): void {
-    // Créer un formulaire temporaire pour ajouter une compétence
-    const skillData = {
-      employee_id: employee.id!,
-      skill_id: 0, // À définir via un modal
-      actual_skill_level_id: 0,
-      acquired_date: new Date().toISOString().split('T')[0],
-      certification: '',
-      last_evaluated_date: new Date().toISOString().split('T')[0]
-    };
-
-    // TODO: Ouvrir un modal pour sélectionner la compétence et le niveau
-    console.log('Ajouter compétence à:', employee.name);
-  }
-
-  // Obtenir le niveau de compétence avec style
   getSkillLevelClass(levelValue: number): string {
     if (levelValue <= 1) return 'bg-red-100 text-red-800';
     if (levelValue <= 2) return 'bg-yellow-100 text-yellow-800';
@@ -407,9 +541,41 @@ export class EmployeesComponent implements OnInit {
     return 'bg-purple-100 text-purple-800';
   }
 
-  // Obtenir la valeur du niveau de compétence
-  getSkillLevelValue(levelId: number): number {
-    const level = this.skillLevels.find(l => l.id === levelId);
-    return level ? level.value : 0;
+  getJobNameFromId(jobId: number): string {
+    const job = this.jobDescriptions.find(j => j.id === jobId);
+    return job ? job.emploi : 'Poste inconnu';
+  }
+
+  getJobFiliereFromId(jobId: number): string {
+    const job = this.jobDescriptions.find(j => j.id === jobId);
+    return job ? job.filiere_activite : 'Filière inconnue';
+  }
+
+  clearMessages(): void {
+    this.errorMessage = null;
+    this.successMessage = null;
+    this.clearSkillMessages();
+  }
+
+  clearSkillMessages(): void {
+    this.skillErrorMessage = null;
+    this.skillSuccessMessage = null;
+  }
+
+  // Compter les compétences d'un employé
+  getSkillsCount(employee: Employee): number {
+    return employee.skills ? employee.skills.length : 0;
+  }
+
+  // Obtenir les compétences visibles (premières compétences)
+  getVisibleSkills(employee: Employee, limit: number = 2): any[] {
+    if (!employee.skills) return [];
+    return employee.skills.slice(0, limit);
+  }
+
+  // Obtenir le nombre de compétences cachées
+  getHiddenSkillsCount(employee: Employee, limit: number = 2): number {
+    if (!employee.skills) return 0;
+    return Math.max(0, employee.skills.length - limit);
   }
 }
