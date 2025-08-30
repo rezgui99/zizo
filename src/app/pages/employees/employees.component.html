@@ -373,12 +373,40 @@
               <div class="text-sm text-gray-500" *ngIf="employee.gender">{{ employee.gender }}</div>
             </td>
             <td class="px-6 py-4">
-              <div *ngIf="getSkillsCount(employee) > 0" class="space-y-1">
+              <div *ngIf="getSkillsCount(employee) > 0" class="space-y-2">
                 <!-- Compétences visibles -->
-                <div *ngFor="let skill of getVisibleSkills(employee, 3)" class="flex items-center space-x-2">
-                  <span class="text-xs font-medium text-gray-700 truncate max-w-24">{{ getSkillName(skill.skill_id) }}</span>
-                  <span [class]="'inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ' + getSkillLevelClass(getSkillLevelValue(skill.actual_skill_level_id))">
-                    {{ getSkillLevelName(skill.actual_skill_level_id) }}
+                <div *ngFor="let skill of getVisibleSkills(employee, 3)" class="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                  <div class="flex items-center space-x-2 flex-1">
+                    <span class="text-xs font-medium text-gray-700 truncate">{{ getSkillNameSafe(skill) }}</span>
+                    <span [class]="'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ' + getSkillLevelClass(getSkillLevelValueSafe(skill))">
+                      {{ getSkillLevelNameSafe(skill) }}
+                    </span>
+                    <span *ngIf="skill.certification" class="text-xs text-green-600 font-medium">
+                      ✓ Certifié
+                    </span>
+                  </div>
+                  <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button (click)="editEmployeeSkill(employee, skill); $event.stopPropagation()" 
+                            class="text-blue-600 hover:text-blue-800 text-xs p-1 rounded hover:bg-blue-100"
+                            title="Modifier cette compétence">
+                      ✏️
+                    </button>
+                    <button (click)="deleteEmployeeSkill(employee, skill); $event.stopPropagation()" 
+                            class="text-red-600 hover:text-red-800 text-xs p-1 rounded hover:bg-red-100"
+                            title="Supprimer cette compétence">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Bouton pour voir toutes les compétences -->
+                <button *ngIf="getHiddenSkillsCount(employee, 3) > 0" 
+                        (click)="debugEmployeeSkills(employee)"
+                        class="text-xs text-blue-600 hover:text-blue-800 underline">
+                  Voir {{ getHiddenSkillsCount(employee, 3) }} autres compétences
+                </button>
+              </div>
+              
                   </span>
                   <div class="flex space-x-1">
                     <button (click)="editEmployeeSkill(employee, skill)" 
@@ -397,10 +425,21 @@
                 </div>
               </div>
               <div *ngIf="getSkillsCount(employee) === 0" class="text-gray-400 text-xs">
-                Aucune compétence
+                <div class="text-center py-2">
+                  <span class="block mb-1">Aucune compétence</span>
+                  <button (click)="showAddSkillForm(employee)" 
+                          class="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 bg-blue-50 rounded hover:bg-blue-100">
+                    ➕ Ajouter une compétence
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Debug info (à supprimer en production) -->
+              <div class="text-xs text-gray-400 mt-1" *ngIf="employee.skills">
+                Debug: {{ employee.skills.length }} compétence(s) trouvée(s)
                 <button (click)="showAddSkillForm(employee)" 
-                        class="ml-2 text-blue-600 hover:text-blue-800">
-                  ➕ Ajouter
+                        class="ml-2 text-blue-600 hover:text-blue-800 underline">
+                  Voir structure
                 </button>
               </div>
             </td>

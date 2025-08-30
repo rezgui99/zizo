@@ -564,18 +564,80 @@ export class EmployeesComponent implements OnInit {
 
   // Compter les compétences d'un employé
   getSkillsCount(employee: Employee): number {
-    return employee.skills ? employee.skills.length : 0;
+    if (!employee.skills || !Array.isArray(employee.skills)) {
+      return 0;
+    }
+    return employee.skills.length;
   }
 
   // Obtenir les compétences visibles (premières compétences)
   getVisibleSkills(employee: Employee, limit: number = 2): any[] {
-    if (!employee.skills) return [];
+    if (!employee.skills || !Array.isArray(employee.skills)) {
+      return [];
+    }
     return employee.skills.slice(0, limit);
   }
 
   // Obtenir le nombre de compétences cachées
   getHiddenSkillsCount(employee: Employee, limit: number = 2): number {
-    if (!employee.skills) return 0;
+    if (!employee.skills || !Array.isArray(employee.skills)) {
+      return 0;
+    }
     return Math.max(0, employee.skills.length - limit);
+  }
+
+  // Debug: Afficher la structure des données
+  debugEmployeeSkills(employee: Employee): void {
+    console.log('Employee:', employee.name);
+    console.log('Skills data:', employee.skills);
+    console.log('Skills type:', typeof employee.skills);
+    console.log('Is array:', Array.isArray(employee.skills));
+    if (employee.skills && Array.isArray(employee.skills)) {
+      employee.skills.forEach((skill, index) => {
+        console.log(`Skill ${index}:`, skill);
+      });
+    }
+  }
+
+  // Obtenir le nom de la compétence avec gestion d'erreur
+  getSkillNameSafe(skill: any): string {
+    if (!skill) return 'Compétence inconnue';
+    
+    // Différentes structures possibles
+    if (skill.skill?.name) return skill.skill.name;
+    if (skill.Skill?.name) return skill.Skill.name;
+    if (skill.name) return skill.name;
+    
+    // Fallback avec l'ID
+    const skillId = skill.skill_id || skill.id;
+    return this.getSkillName(skillId);
+  }
+
+  // Obtenir le nom du niveau avec gestion d'erreur
+  getSkillLevelNameSafe(skill: any): string {
+    if (!skill) return 'Niveau inconnu';
+    
+    // Différentes structures possibles
+    if (skill.SkillLevel?.level_name) return skill.SkillLevel.level_name;
+    if (skill.skill_level?.level_name) return skill.skill_level.level_name;
+    if (skill.level_name) return skill.level_name;
+    
+    // Fallback avec l'ID
+    const levelId = skill.actual_skill_level_id || skill.level_id;
+    return this.getSkillLevelName(levelId);
+  }
+
+  // Obtenir la valeur du niveau avec gestion d'erreur
+  getSkillLevelValueSafe(skill: any): number {
+    if (!skill) return 0;
+    
+    // Différentes structures possibles
+    if (skill.SkillLevel?.value) return skill.SkillLevel.value;
+    if (skill.skill_level?.value) return skill.skill_level.value;
+    if (skill.value) return skill.value;
+    
+    // Fallback avec l'ID
+    const levelId = skill.actual_skill_level_id || skill.level_id;
+    return this.getSkillLevelValue(levelId);
   }
 }
