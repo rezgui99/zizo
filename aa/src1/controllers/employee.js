@@ -1,5 +1,5 @@
 const db = require("../../models/index");
-const { Employee, EmployeeSkill, Skill, SkillLevel, sequelize } = db;
+const { Employee, EmployeeSkill, Skill, SkillLevel, SkillType, sequelize } = db;
 
 async function syncEmployeeSkills({ employee, skills, transaction }) {
   // Supprimer toutes les compétences existantes
