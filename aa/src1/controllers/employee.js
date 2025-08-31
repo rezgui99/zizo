@@ -172,15 +172,30 @@ const createEmployee = async (req, res) => {
     }
 
     const createdEmployee = await Employee.findByPk(employee.id, {
-      include: {
+      include: [{
         model: EmployeeSkill,
         as: 'EmployeeSkills',
-        include: [Skill, SkillLevel],
-      },
+        include: [
+          {
+            model: Skill,
+            as: 'Skill',
+            include: [
+              {
+                model: SkillType,
+                as: "type",
+              },
+            ],
+          },
+          {
+            model: SkillLevel,
+            as: 'SkillLevel',
+          },
+        ],
+      }],
       transaction: t,
     });
 
-    console.log('Employee created successfully with skills:', createdEmployee.EmployeeSkills?.length || 0);
+    console.log('Employee created successfully with skills:', createdEmployee?.EmployeeSkills?.length || 0);
     await t.commit();
     res.status(201).json(createdEmployee);
   } catch (err) {
@@ -223,15 +238,30 @@ const updateEmployee = async (req, res) => {
     await syncEmployeeSkills({ employee, skills, transaction: t });
 
     const updatedEmployee = await Employee.findByPk(employee.id, {
-      include: {
+      include: [{
         model: EmployeeSkill,
         as: 'EmployeeSkills',
-        include: [Skill, SkillLevel],
-      },
+        include: [
+          {
+            model: Skill,
+            as: 'Skill',
+            include: [
+              {
+                model: SkillType,
+                as: "type",
+              },
+            ],
+          },
+          {
+            model: SkillLevel,
+            as: 'SkillLevel',
+          },
+        ],
+      }],
       transaction: t,
     });
 
-    console.log('Employee updated successfully with skills:', updatedEmployee.EmployeeSkills?.length || 0);
+    console.log('Employee updated successfully with skills:', updatedEmployee?.EmployeeSkills?.length || 0);
     await t.commit();
     res.json(updatedEmployee);
   } catch (error) {
@@ -248,7 +278,6 @@ const deleteEmployee = async (req, res) => {
     if (!employee) {
       await t.rollback();
       return res.status(404).json({ message: "L'employée n'existe pas" });
-    console.log('Employee updated successfully with skills:', updatedEmployee.EmployeeSkills?.length || 0);
     }
 
     await EmployeeSkill.destroy({
