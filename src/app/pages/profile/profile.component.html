@@ -1,3 +1,4 @@
+<!-- Debug button (à supprimer en production) -->
 <div class="p-6 max-w-4xl mx-auto">
   <div class="flex justify-between items-center mb-6">
     <div class="flex items-center">
@@ -9,6 +10,10 @@
       <h2 class="text-3xl font-bold text-primary">Profil Employé</h2>
     </div>
     <div class="flex space-x-3">
+      <!-- Debug button -->
+      <button (click)="debugEmployeeData()" class="btn bg-gray-500 text-white hover:bg-gray-600">
+        🐛 Debug
+      </button>
       <button *ngIf="!isEditing && !showSkillForm" (click)="showAddSkillForm()" class="btn btn-secondary">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -25,7 +30,8 @@
   </div>
 
   <div *ngIf="loading" class="text-center text-primary py-8">
-    Chargement du profil...
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    <p class="mt-2">Chargement du profil...</p>
   </div>
 
   <div *ngIf="errorMessage" class="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
@@ -75,6 +81,7 @@
           <h3 class="text-2xl font-semibold text-dark">{{ employee.name }}</h3>
           <p class="text-lg text-gray-600">{{ employee.position }}</p>
           <p class="text-sm text-gray-500">{{ employee.email }}</p>
+          <p class="text-sm text-gray-500">Embauché le {{ formatDateSafe(employee.hire_date) }}</p>
         </div>
       </div>
     </div>
@@ -214,8 +221,8 @@
           </button>
         </div>
 
-        <!-- Compétences organisées par type -->
-        <div *ngIf="hasSkillsSafe()" class="space-y-6">
+        <!-- Compétences organisées par type (mode lecture) -->
+        <div *ngIf="hasSkillsSafe() && !isEditing" class="space-y-6">
           <div *ngFor="let typeEntry of getSkillsByTypeEntries()" class="border rounded-lg p-4 bg-gray-50">
             <h5 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
               <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 text-sm font-medium mr-3">

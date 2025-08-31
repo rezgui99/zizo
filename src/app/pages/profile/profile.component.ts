@@ -77,8 +77,11 @@ export class ProfileComponent implements OnInit {
 
   loadEmployee(id: number): void {
     this.loading = true;
+    this.errorMessage = null;
+    
     this.employeeService.getEmployeeById(id).subscribe({
       next: (employee) => {
+        console.log('Employee loaded:', employee);
         this.employee = employee;
         this.populateForm();
         this.loading = false;
@@ -100,6 +103,7 @@ export class ProfileComponent implements OnInit {
       this.skills = skills || [];
       this.skillTypes = skillTypes || [];
       this.skillLevels = skillLevels || [];
+      console.log('Skills data loaded:', { skills: this.skills.length, types: this.skillTypes.length, levels: this.skillLevels.length });
     }).catch(err => {
       console.error('Error loading skills data:', err);
     });
@@ -298,7 +302,15 @@ export class ProfileComponent implements OnInit {
     this.skillSuccessMessage = null;
   }
 
-  // Statistiques pour le profil
+  // ==================== MÉTHODES STATISTIQUES SÉCURISÉES ====================
+
+  getSkillsCount(): number {
+    if (!this.employee?.skills || !Array.isArray(this.employee.skills)) {
+      return 0;
+    }
+    return this.employee.skills.length;
+  }
+
   getCertifiedSkillsCount(): number {
     if (!this.hasSkillsSafe()) return 0;
     return this.getSkillsSafe().filter(skill => skill.certification && skill.certification.trim() !== '').length;
@@ -316,47 +328,18 @@ export class ProfileComponent implements OnInit {
     return totalValue / skills.length;
   }
 
-  getSkillsByType(): { [key: string]: any[] } {
-    if (!this.hasSkillsSafe()) return {};
-    
-    const skillsByType: { [key: string]: any[] } = {};
-    
-    this.getSkillsSafe().forEach(skill => {
-      const skillObj = this.skills.find(s => s.id === skill.skill_id);
-      const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
-      const typeName = typeObj?.type_name || 'Autre';
-      
-      if (!skillsByType[typeName]) {
-        skillsByType[typeName] = [];
-      }
-      skillsByType[typeName].push(skill);
-    });
-    
-    return skillsByType;
-  }
-
   getSkillsByTypeCount(): number {
-    const skillsByType = this.getSkillsByType();
-    return Object.keys(skillsByType).length;
-  }
-
-  getSkillsByType(): { [key: string]: any[] } {
-    if (!this.hasSkillsSafe()) return {};
+    if (!this.hasSkillsSafe()) return 0;
     
-    const skillsByType: { [key: string]: any[] } = {};
-    
+    const types = new Set<string>();
     this.getSkillsSafe().forEach(skill => {
-      const skillObj = this.skills.find(s => s.id === skill.skill_id);
-      const typeObj = this.skillTypes.find(t => t.id === skillObj?.skill_type_id);
-      const typeName = typeObj?.type_name || 'Autre';
-      
-      if (!skillsByType[typeName]) {
-        skillsByType[typeName] = [];
+      const typeName = this.getSkillTypeNameSafe(skill);
+      if (typeName !== 'Type inconnu') {
+        types.add(typeName);
       }
-      skillsByType[typeName].push(skill);
     });
     
-    return skillsByType;
+    return types.size;
   }
 
   getSkillsByTypeEntries(): Array<{type: string, skills: any[]}> {
@@ -375,6 +358,8 @@ export class ProfileComponent implements OnInit {
     
     return Object.entries(skillsByType).map(([type, skills]) => ({ type, skills }));
   }
+
+  // ==================== MÉTHODES UTILITAIRES SÉCURISÉES ====================
 
   getSkillTypeNameSafe(skill: any): string {
     if (!skill) return 'Type inconnu';
@@ -429,6 +414,11 @@ export class ProfileComponent implements OnInit {
     return this.getSkillLevelValue(levelId);
   }
 
+  getSkillLevelValue(levelId: number): number {
+    const level = this.skillLevels.find(l => l.id === levelId);
+    return level ? level.value : 0;
+  }
+
   getSkillLevelClass(levelValue: number): string {
     if (levelValue <= 1) return 'bg-red-100 text-red-800';
     if (levelValue <= 2) return 'bg-yellow-100 text-yellow-800';
@@ -445,7 +435,11 @@ export class ProfileComponent implements OnInit {
   // Méthode sécurisée pour formater les dates avec undefined
   formatDateSafe(dateString: string | null | undefined): string {
     if (!dateString) return 'Non définie';
-    return new Date(dateString).toLocaleDateString('fr-FR');
+    try {
+      return new Date(dateString).toLocaleDateString('fr-FR');
+    } catch {
+      return 'Date invalide';
+    }
   }
 
   // Méthode sécurisée pour vérifier les compétences
@@ -459,5 +453,31 @@ export class ProfileComponent implements OnInit {
       return [];
     }
     return this.employee.skills;
+  }
+
+  // Debug method pour comprendre la structure des données
+  debugEmployeeData(): void {
+    console.log('=== DEBUG EMPLOYEE DATA ===');
+    console.log('Employee object:', this.employee);
+    console.log('Employee skills:', this.employee?.skills);
+    console.log('Skills type:', typeof this.employee?.skills);
+    console.log('Is skills array:', Array.isArray(this.employee?.skills));
+    
+    if (this.employee?.skills && Array.isArray(this.employee.skills)) {
+      console.log('Skills count:', this.employee.skills.length);
+      this.employee.skills.forEach((skill, index) => {
+        console.log(`Skill ${index}:`, skill);
+        console.log(`  - skill_id:`, skill.skill_id);
+        console.log(`  - skill object:`, skill.skill);
+        console.log(`  - Skill object:`, skill.Skill);
+        console.log(`  - level_id:`, skill.actual_skill_level_id);
+        console.log(`  - SkillLevel:`, skill.SkillLevel);
+      });
+    }
+    
+    console.log('Available skills:', this.skills);
+    console.log('Available skill types:', this.skillTypes);
+    console.log('Available skill levels:', this.skillLevels);
+    console.log('=== END DEBUG ===');
   }
 }

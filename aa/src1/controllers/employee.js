@@ -45,11 +45,27 @@ const findAllEmployees = async (req, res) => {
     const employees = await Employee.findAll({
       include: {
         model: EmployeeSkill,
-        include: [Skill, SkillLevel],
+        include: [
+          {
+            model: Skill,
+            include: [
+              {
+                model: SkillType,
+                as: "type",
+              },
+            ],
+          },
+          {
+            model: SkillLevel,
+          },
+        ],
       },
     });
+    
+    console.log('Employees loaded:', employees.length);
     res.json(employees);
   } catch (error) {
+    console.error('Error in findAllEmployees:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -59,13 +75,34 @@ const findEmployeeById = async (req, res) => {
     const employee = await Employee.findByPk(req.params.id, {
       include: {
         model: EmployeeSkill,
-        include: [Skill, SkillLevel],
+        include: [
+          {
+            model: Skill,
+            include: [
+              {
+                model: SkillType,
+                as: "type",
+              },
+            ],
+          },
+          {
+            model: SkillLevel,
+          },
+        ],
       },
     });
     if (!employee)
       return res.status(404).json({ message: "L'employée n'existe pas" });
+    
+    console.log('Employee found with skills:', {
+      id: employee.id,
+      name: employee.name,
+      skillsCount: employee.EmployeeSkills?.length || 0
+    });
+    
     res.json(employee);
   } catch (error) {
+    console.error('Error in findEmployeeById:', error);
     res.status(500).json({ error: error.message });
   }
 };
