@@ -9,7 +9,8 @@ const {
   predictApplicationSuccess,
   getDepartmentStatistics,
   getContractTypeStatistics,
-  getSkillsDemandAnalysis
+  getSkillsDemandAnalysis,
+  predictMultipleApplications
 } = require("../controllers/analytics");
 
 // Toutes les routes nécessitent une authentification
