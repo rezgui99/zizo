@@ -762,27 +762,6 @@ export class EmployeesComponent implements OnInit {
     return Math.max(0, skills.length - limit);
   }
 
-  // Debug: Afficher la structure des données
-  debugEmployeeSkills(employee: Employee): void {
-    console.log('Employee:', employee.name);
-    console.log('Skills data (skills):', (employee as any).skills);
-    console.log('Skills data (EmployeeSkills):', (employee as any).EmployeeSkills);
-    console.log('Skills type:', typeof (employee as any).skills);
-    console.log('EmployeeSkills type:', typeof (employee as any).EmployeeSkills);
-    console.log('Is skills array:', Array.isArray((employee as any).skills));
-    console.log('Is EmployeeSkills array:', Array.isArray((employee as any).EmployeeSkills));
-    
-    const skills = this.getSkillsSafe(employee);
-    console.log('Final skills array:', skills);
-    console.log('Final skills count:', skills.length);
-    
-    if (skills && Array.isArray(skills)) {
-      skills.forEach((skill, index) => {
-        console.log(`Skill ${index}:`, skill);
-      });
-    }
-  }
-
   // Obtenir le nom de la compétence avec gestion d'erreur
   getSkillNameSafe(skill: any): string {
     if (!skill) return 'Compétence inconnue';

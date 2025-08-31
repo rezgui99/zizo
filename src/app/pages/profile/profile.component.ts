@@ -455,29 +455,4 @@ export class ProfileComponent implements OnInit {
     return this.employee.skills;
   }
 
-  // Debug method pour comprendre la structure des données
-  debugEmployeeData(): void {
-    console.log('=== DEBUG EMPLOYEE DATA ===');
-    console.log('Employee object:', this.employee);
-    console.log('Employee skills:', this.employee?.skills);
-    console.log('Skills type:', typeof this.employee?.skills);
-    console.log('Is skills array:', Array.isArray(this.employee?.skills));
-    
-    if (this.employee?.skills && Array.isArray(this.employee.skills)) {
-      console.log('Skills count:', this.employee.skills.length);
-      this.employee.skills.forEach((skill, index) => {
-        console.log(`Skill ${index}:`, skill);
-        console.log(`  - skill_id:`, skill.skill_id);
-        console.log(`  - skill object:`, skill.skill);
-        console.log(`  - Skill object:`, skill.Skill);
-        console.log(`  - level_id:`, skill.actual_skill_level_id);
-        console.log(`  - SkillLevel:`, skill.SkillLevel);
-      });
-    }
-    
-    console.log('Available skills:', this.skills);
-    console.log('Available skill types:', this.skillTypes);
-    console.log('Available skill levels:', this.skillLevels);
-    console.log('=== END DEBUG ===');
-  }
 }

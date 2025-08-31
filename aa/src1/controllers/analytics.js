@@ -114,6 +114,14 @@ const getEmployeeSkillRecommendations = async (req, res) => {
       return res.status(404).json({ message: 'Employé non trouvé' });
     }
 
+    // Récupérer les départements disponibles depuis les fiches de poste
+    const departments = await sequelize.query(`
+      SELECT DISTINCT filiere_activite as department
+      FROM "JobDescriptions"
+      WHERE filiere_activite IS NOT NULL
+      ORDER BY filiere_activite
+    `, { type: sequelize.QueryTypes.SELECT });
+
     // Récupérer les compétences de l'employé
     const employeeSkills = await sequelize.query(`
       SELECT 
@@ -490,22 +498,23 @@ const predictMultipleApplications = async (req, res) => {
 // Statistiques par département
 const getDepartmentStatistics = async (req, res) => {
   try {
-    const departments = await JobDescription.findAll({
-      attributes: [
-        'filiere_activite',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'job_count']
-      ],
-      group: ['filiere_activite'],
-      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
-      raw: true
-    });
+    // Requête SQL directe pour éviter les problèmes de GROUP BY
+    const departmentsRaw = await sequelize.query(`
+      SELECT 
+        filiere_activite as department,
+        COUNT(id) as job_count
+      FROM "JobDescriptions"
+      WHERE filiere_activite IS NOT NULL
+      GROUP BY filiere_activite
+      ORDER BY COUNT(id) DESC
+    `, { type: sequelize.QueryTypes.SELECT });
 
-    const departmentStats = departments.map(dept => ({
-      department: dept.filiere_activite,
+    const departmentStats = departmentsRaw.map(dept => ({
+      department: dept.department,
       total_applications: parseInt(dept.job_count) * (5 + Math.floor(Math.random() * 10)),
       successful_applications: parseInt(dept.job_count) * (3 + Math.floor(Math.random() * 5)),
-      success_rate: 60 + Math.random() * 30,
-      average_time_to_hire: 10 + Math.random() * 15,
+      success_rate: Math.round((60 + Math.random() * 30) * 10) / 10,
+      average_time_to_hire: Math.round((10 + Math.random() * 15) * 10) / 10,
       top_skills_requested: []
     }));
 
