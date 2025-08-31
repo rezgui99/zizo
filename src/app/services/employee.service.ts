@@ -22,10 +22,12 @@ export class EmployeeService {
   }
 
   createEmployee(employee: Employee): Observable<Employee> {
+    console.log('Creating employee with data:', employee);
     return this.http.post<Employee>(this.apiUrl, employee);
   }
 
   updateEmployee(id: number, employee: Employee): Observable<Employee> {
+    console.log('Updating employee with data:', employee);
     return this.http.put<Employee>(`${this.apiUrl}/${id}`, employee);
   }
 

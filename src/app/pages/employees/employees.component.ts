@@ -169,6 +169,9 @@ export class EmployeesComponent implements OnInit {
   onEmployeeSubmit(): void {
     if (this.employeeForm.valid) {
       this.savingEmployee = true;
+      this.errorMessage = null;
+      this.successMessage = null;
+      
       const formValue = this.employeeForm.value;
       
       const skillsData = formValue.skills
@@ -190,10 +193,11 @@ export class EmployeesComponent implements OnInit {
         gender: formValue.gender || '',
         location: formValue.location || '',
         department: formValue.department || '',
-        department: formValue.department || '',
         notes: formValue.notes || '',
         skills: skillsData
       } as Employee;
+      
+      console.log('Employee data being sent:', JSON.stringify(employeeData, null, 2));
       
       if (this.editingEmployee) {
         this.employeeService.updateEmployee(this.editingEmployee.id!, employeeData).subscribe({
@@ -209,7 +213,8 @@ export class EmployeesComponent implements OnInit {
           },
           error: (err) => {
             console.error('Error updating employee:', err);
-            this.errorMessage = `Erreur mise à jour: ${err.error?.message || err.message}`;
+            console.error('Full error object:', err);
+            this.errorMessage = `Erreur mise à jour: ${err.error?.message || err.error?.error || err.message || 'Erreur inconnue'}`;
             this.savingEmployee = false;
           }
         });
@@ -225,11 +230,37 @@ export class EmployeesComponent implements OnInit {
           },
           error: (err) => {
             console.error('Error creating employee:', err);
-            this.errorMessage = `Erreur création: ${err.error?.message || err.message}`;
+            console.error('Full error object:', err);
+            console.error('Error status:', err.status);
+            console.error('Error details:', err.error);
+            
+            let errorMsg = 'Erreur lors de la création de l\'employé';
+            if (err.error?.message) {
+              errorMsg = err.error.message;
+            } else if (err.error?.details && Array.isArray(err.error.details)) {
+              errorMsg = err.error.details.join(', ');
+            } else if (err.error?.error) {
+              errorMsg = err.error.error;
+            } else if (err.message) {
+              errorMsg = err.message;
+            }
+            
+            this.errorMessage = `Erreur création: ${errorMsg}`;
             this.savingEmployee = false;
           }
         });
       }
+    } else {
+      console.log('Form is invalid:', this.employeeForm.errors);
+      console.log('Form value:', this.employeeForm.value);
+      
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        control?.markAsTouched();
+      });
+      
+      this.errorMessage = 'Veuillez remplir tous les champs obligatoires correctement.';
     }
   }
 
