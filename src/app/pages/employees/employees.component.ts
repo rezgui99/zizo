@@ -690,46 +690,57 @@ export class EmployeesComponent implements OnInit {
 
   // Méthode sécurisée pour vérifier les compétences
   hasSkillsSafe(employee: Employee | null): boolean {
-    return !!(employee?.skills && Array.isArray(employee.skills) && employee.skills.length > 0);
+    return !!(employee?.skills && Array.isArray(employee.skills) && employee.skills.length > 0) ||
+           !!(employee?.EmployeeSkills && Array.isArray(employee.EmployeeSkills) && employee.EmployeeSkills.length > 0);
   }
 
   // Méthode sécurisée pour obtenir les compétences
   getSkillsSafe(employee: Employee | null): any[] {
-    if (!employee?.skills || !Array.isArray(employee.skills)) {
-      return [];
+    // Essayer d'abord la propriété 'skills', puis 'EmployeeSkills'
+    if (employee?.skills && Array.isArray(employee.skills)) {
+      return employee.skills;
     }
-    return employee.skills;
+    if (employee?.EmployeeSkills && Array.isArray(employee.EmployeeSkills)) {
+      return employee.EmployeeSkills;
+    }
+    return [];
   }
 
   // Compter les compétences d'un employé
   getSkillsCount(employee: Employee): number {
-    if (!employee.skills || !Array.isArray(employee.skills)) {
-      return 0;
+    // Essayer d'abord la propriété 'skills', puis 'EmployeeSkills'
+    if (employee.skills && Array.isArray(employee.skills)) {
+      return employee.skills.length;
     }
-    return employee.skills.length;
+    if ((employee as any).EmployeeSkills && Array.isArray((employee as any).EmployeeSkills)) {
+      return (employee as any).EmployeeSkills.length;
+    }
+    return 0;
   }
 
   // Statistiques pour la vue détaillée
   getCertifiedSkillsCount(employee: Employee): number {
-    if (!employee?.skills || !Array.isArray(employee.skills)) return 0;
-    return employee.skills.filter(skill => skill.certification && skill.certification.trim() !== '').length;
+    const skills = this.getSkillsSafe(employee);
+    return skills.filter(skill => skill.certification && skill.certification.trim() !== '').length;
   }
 
   getAverageSkillLevel(employee: Employee): number {
-    if (!employee?.skills || !Array.isArray(employee.skills) || employee.skills.length === 0) return 0;
+    const skills = this.getSkillsSafe(employee);
+    if (skills.length === 0) return 0;
     
-    const totalValue = employee.skills.reduce((sum, skill) => {
+    const totalValue = skills.reduce((sum, skill) => {
       return sum + this.getSkillLevelValueSafe(skill);
     }, 0);
     
-    return totalValue / employee.skills.length;
+    return totalValue / skills.length;
   }
 
   getSkillsByTypeCount(employee: Employee): number {
-    if (!employee?.skills || !Array.isArray(employee.skills)) return 0;
+    const skills = this.getSkillsSafe(employee);
+    if (skills.length === 0) return 0;
     
     const types = new Set<string>();
-    employee.skills.forEach(skill => {
+    skills.forEach(skill => {
       const typeName = this.getSkillTypeNameSafe(skill);
       if (typeName !== 'Type inconnu') {
         types.add(typeName);
@@ -741,28 +752,32 @@ export class EmployeesComponent implements OnInit {
 
   // Obtenir les compétences visibles (premières compétences)
   getVisibleSkills(employee: Employee, limit: number = 2): any[] {
-    if (!employee.skills || !Array.isArray(employee.skills)) {
-      return [];
-    }
-    return employee.skills.slice(0, limit);
+    const skills = this.getSkillsSafe(employee);
+    return skills.slice(0, limit);
   }
 
   // Obtenir le nombre de compétences cachées
   getHiddenSkillsCount(employee: Employee, limit: number = 2): number {
-    if (!employee.skills || !Array.isArray(employee.skills)) {
-      return 0;
-    }
-    return Math.max(0, employee.skills.length - limit);
+    const skills = this.getSkillsSafe(employee);
+    return Math.max(0, skills.length - limit);
   }
 
   // Debug: Afficher la structure des données
   debugEmployeeSkills(employee: Employee): void {
     console.log('Employee:', employee.name);
-    console.log('Skills data:', employee.skills);
-    console.log('Skills type:', typeof employee.skills);
-    console.log('Is array:', Array.isArray(employee.skills));
-    if (employee.skills && Array.isArray(employee.skills)) {
-      employee.skills.forEach((skill, index) => {
+    console.log('Skills data (skills):', (employee as any).skills);
+    console.log('Skills data (EmployeeSkills):', (employee as any).EmployeeSkills);
+    console.log('Skills type:', typeof (employee as any).skills);
+    console.log('EmployeeSkills type:', typeof (employee as any).EmployeeSkills);
+    console.log('Is skills array:', Array.isArray((employee as any).skills));
+    console.log('Is EmployeeSkills array:', Array.isArray((employee as any).EmployeeSkills));
+    
+    const skills = this.getSkillsSafe(employee);
+    console.log('Final skills array:', skills);
+    console.log('Final skills count:', skills.length);
+    
+    if (skills && Array.isArray(skills)) {
+      skills.forEach((skill, index) => {
         console.log(`Skill ${index}:`, skill);
       });
     }

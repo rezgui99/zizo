@@ -11,6 +11,7 @@ export interface Employee {
   job_description_id?: number | null;
   jobDescription?: JobDescriptionBasic;
   skills?: EmployeeSkill[];
+  EmployeeSkills?: EmployeeSkill[]; // Alternative property name from backend
   createdAt?: string;
   updatedAt?: string;
 }

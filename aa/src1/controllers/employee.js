@@ -43,11 +43,13 @@ async function syncEmployeeSkills({ employee, skills, transaction }) {
 const findAllEmployees = async (req, res) => {
   try {
     const employees = await Employee.findAll({
-      include: {
+      include: [{
         model: EmployeeSkill,
+        as: 'EmployeeSkills',
         include: [
           {
             model: Skill,
+            as: 'Skill',
             include: [
               {
                 model: SkillType,
@@ -57,12 +59,19 @@ const findAllEmployees = async (req, res) => {
           },
           {
             model: SkillLevel,
+            as: 'SkillLevel',
           },
         ],
-      },
+      }],
     });
     
     console.log('Employees loaded:', employees.length);
+    if (employees.length > 0) {
+      console.log('First employee skills:', employees[0].EmployeeSkills?.length || 0);
+      if (employees[0].EmployeeSkills?.length > 0) {
+        console.log('First skill structure:', JSON.stringify(employees[0].EmployeeSkills[0], null, 2));
+      }
+    }
     res.json(employees);
   } catch (error) {
     console.error('Error in findAllEmployees:', error);
@@ -73,11 +82,13 @@ const findAllEmployees = async (req, res) => {
 const findEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findByPk(req.params.id, {
-      include: {
+      include: [{
         model: EmployeeSkill,
+        as: 'EmployeeSkills',
         include: [
           {
             model: Skill,
+            as: 'Skill',
             include: [
               {
                 model: SkillType,
@@ -87,9 +98,10 @@ const findEmployeeById = async (req, res) => {
           },
           {
             model: SkillLevel,
+            as: 'SkillLevel',
           },
         ],
-      },
+      }],
     });
     if (!employee)
       return res.status(404).json({ message: "L'employée n'existe pas" });
@@ -97,7 +109,8 @@ const findEmployeeById = async (req, res) => {
     console.log('Employee found with skills:', {
       id: employee.id,
       name: employee.name,
-      skillsCount: employee.EmployeeSkills?.length || 0
+      skillsCount: employee.EmployeeSkills?.length || 0,
+      skillsData: employee.EmployeeSkills
     });
     
     res.json(employee);

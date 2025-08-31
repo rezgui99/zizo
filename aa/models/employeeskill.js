@@ -5,12 +5,15 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       EmployeeSkill.belongsTo(models.Employee, {
         foreignKey: "employee_id",
+        as: "Employee",
       });
       EmployeeSkill.belongsTo(models.Skill, {
         foreignKey: "skill_id",
+        as: "Skill",
       });
       EmployeeSkill.belongsTo(models.SkillLevel, {
         foreignKey: "actual_skill_level_id",
+        as: "SkillLevel",
       });
     }
   }
