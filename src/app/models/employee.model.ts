@@ -8,6 +8,7 @@ export interface Employee {
   gender?: string;
   location?: string;
   notes?: string;
+  department?: string;
   job_description_id?: number | null;
   jobDescription?: JobDescriptionBasic;
   skills?: EmployeeSkill[];

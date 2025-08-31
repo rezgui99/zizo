@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
       gender: DataTypes.STRING,          // Ajouté
       location: DataTypes.STRING,        // Ajouté
       notes: DataTypes.TEXT,             // Ajouté
+      department: DataTypes.STRING,      // Ajouté pour analytics
     },
     {
       sequelize,

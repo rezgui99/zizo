@@ -140,6 +140,21 @@
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                    placeholder="Paris, Lyon, Télétravail...">
           </div>
+          <div>
+            <label class="block text-gray-700 text-sm font-bold mb-2">Département</label>
+            <select formControlName="department" 
+                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+              <option value="">Sélectionner un département</option>
+              <option value="Développement">Développement</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Ressources Humaines">Ressources Humaines</option>
+              <option value="Finance">Finance</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Support">Support</option>
+              <option value="Direction">Direction</option>
+              <option value="Production">Production</option>
+            </select>
+          </div>
           <div class="md:col-span-2">
             <label class="block text-gray-700 text-sm font-bold mb-2">Notes</label>
             <textarea formControlName="notes" rows="3" 

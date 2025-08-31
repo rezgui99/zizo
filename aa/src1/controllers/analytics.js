@@ -498,25 +498,29 @@ const predictMultipleApplications = async (req, res) => {
 // Statistiques par département
 const getDepartmentStatistics = async (req, res) => {
   try {
-    // Requête SQL directe pour éviter les problèmes de GROUP BY
+    // Statistiques basées sur les employés par département
     const departmentsRaw = await sequelize.query(`
       SELECT 
-        filiere_activite as department,
-        COUNT(id) as job_count
-      FROM "JobDescriptions"
-      WHERE filiere_activite IS NOT NULL
-      GROUP BY filiere_activite
+        department,
+        COUNT(id) as employee_count
+      FROM "Employees"
+      WHERE department IS NOT NULL AND department != ''
+      GROUP BY department
       ORDER BY COUNT(id) DESC
     `, { type: sequelize.QueryTypes.SELECT });
 
-    const departmentStats = departmentsRaw.map(dept => ({
-      department: dept.department,
-      total_applications: parseInt(dept.job_count) * (5 + Math.floor(Math.random() * 10)),
-      successful_applications: parseInt(dept.job_count) * (3 + Math.floor(Math.random() * 5)),
-      success_rate: Math.round((60 + Math.random() * 30) * 10) / 10,
-      average_time_to_hire: Math.round((10 + Math.random() * 15) * 10) / 10,
-      top_skills_requested: []
-    }));
+    const departmentStats = departmentsRaw.map(dept => {
+      const employeeCount = parseInt(dept.employee_count);
+      return {
+        department: dept.department,
+        total_applications: employeeCount * (8 + Math.floor(Math.random() * 12)), // Simulation basée sur le nombre d'employés
+        successful_applications: employeeCount * (5 + Math.floor(Math.random() * 8)),
+        success_rate: Math.round((65 + Math.random() * 25) * 10) / 10,
+        average_time_to_hire: Math.round((12 + Math.random() * 18) * 10) / 10,
+        employee_count: employeeCount,
+        top_skills_requested: []
+      };
+    });
 
     res.json(departmentStats);
   } catch (error) {

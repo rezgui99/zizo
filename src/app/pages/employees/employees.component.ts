@@ -93,6 +93,7 @@ export class EmployeesComponent implements OnInit {
       phone: [''],
       gender: [''],
       location: [''],
+      department: [''],
       notes: [''],
       skills: this.formBuilder.array([])
     });
@@ -188,6 +189,8 @@ export class EmployeesComponent implements OnInit {
         phone: formValue.phone || '',
         gender: formValue.gender || '',
         location: formValue.location || '',
+        department: formValue.department || '',
+        department: formValue.department || '',
         notes: formValue.notes || '',
         skills: skillsData
       } as Employee;
