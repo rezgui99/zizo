@@ -191,6 +191,7 @@ const updateEmployee = async (req, res) => {
     const updatedEmployee = await Employee.findByPk(employee.id, {
       include: {
         model: EmployeeSkill,
+        as: 'EmployeeSkills',
         include: [Skill, SkillLevel],
       },
       transaction: t,
