@@ -11,6 +11,15 @@ const {
 
 const validateEmployee = require("../middleware/validateEmployee");
 
+// Middleware de logging pour debug
+router.use((req, res, next) => {
+  console.log(`Employee route: ${req.method} ${req.path}`);
+  if (req.method === 'POST' || req.method === 'PUT') {
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+
 router.post("/", validateEmployee, createEmployee);
 router.put("/:id", validateEmployee, updateEmployee);
 router.get("/", findAllEmployees);

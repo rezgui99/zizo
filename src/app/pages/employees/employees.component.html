@@ -86,7 +86,6 @@
           <div>
             <label class="block text-gray-700 text-sm font-bold mb-2">
               Nom complet *
-              <span class="text-red-500">*</span>
             </label>
             <input type="text" formControlName="name" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -102,7 +101,6 @@
           <div>
             <label class="block text-gray-700 text-sm font-bold mb-2">
               Poste *
-              <span class="text-red-500">*</span>
             </label>
             <input type="text" formControlName="position" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -118,7 +116,6 @@
           <div>
             <label class="block text-gray-700 text-sm font-bold mb-2">
               Email *
-              <span class="text-red-500">*</span>
             </label>
             <input type="email" formControlName="email" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -134,7 +131,6 @@
           <div>
             <label class="block text-gray-700 text-sm font-bold mb-2">
               Date d'embauche *
-              <span class="text-red-500">*</span>
             </label>
             <input type="date" formControlName="hire_date" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -150,8 +146,13 @@
             <label class="block text-gray-700 text-sm font-bold mb-2">Téléphone</label>
             <input type="tel" formControlName="phone" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                   [class.border-red-500]="employeeForm.get('phone')?.invalid && employeeForm.get('phone')?.touched"
                    placeholder="+33 1 23 45 67 89"
                    appTooltip="Numéro de téléphone professionnel (optionnel)">
+            <div *ngIf="employeeForm.get('phone')?.invalid && employeeForm.get('phone')?.touched" 
+                 class="text-red-500 text-xs mt-1">
+              Format de téléphone invalide (ex: +33 1 23 45 67 89)
+            </div>
           </div>
           
           <div>
@@ -178,8 +179,13 @@
             <label class="block text-gray-700 text-sm font-bold mb-2">Département</label>
             <input type="text" formControlName="department" 
                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                   [class.border-red-500]="employeeForm.get('department')?.invalid && employeeForm.get('department')?.touched"
                    placeholder="Service, Département"
                    appTooltip="Département ou service d'affectation">
+            <div *ngIf="employeeForm.get('department')?.invalid && employeeForm.get('department')?.touched" 
+                 class="text-red-500 text-xs mt-1">
+              Le département ne peut pas dépasser 100 caractères
+            </div>
           </div>
           
           <div class="md:col-span-2">

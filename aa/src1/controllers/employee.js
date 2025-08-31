@@ -148,6 +148,7 @@ const createEmployee = async (req, res) => {
     phone,
     gender,
     location,
+    department,
     notes,
     skills = [],
   } = req.body;
@@ -155,12 +156,10 @@ const createEmployee = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
-    console.log('Updating employee:', req.params.id, 'with skills:', skills.length);
-    
     console.log('Creating employee with data:', { name, position, email, skills: skills.length });
     
     const employee = await Employee.create(
-      { name, position, hire_date, email, phone, gender, location, notes },
+      { name, position, hire_date, email, phone, gender, location, department, notes },
       { transaction: t }
     );
 
@@ -175,11 +174,13 @@ const createEmployee = async (req, res) => {
     const createdEmployee = await Employee.findByPk(employee.id, {
       include: {
         model: EmployeeSkill,
+        as: 'EmployeeSkills',
         include: [Skill, SkillLevel],
       },
       transaction: t,
     });
 
+    console.log('Employee created successfully with skills:', createdEmployee.EmployeeSkills?.length || 0);
     await t.commit();
     res.status(201).json(createdEmployee);
   } catch (err) {
@@ -197,8 +198,8 @@ const updateEmployee = async (req, res) => {
     email,
     phone,
     gender,
-    console.log('Employee created successfully with skills:', createdEmployee.EmployeeSkills?.length || 0);
     location,
+    department,
     notes,
     skills = [],
   } = req.body;
@@ -206,6 +207,8 @@ const updateEmployee = async (req, res) => {
   const t = await sequelize.transaction();
 
   try {
+    console.log('Updating employee:', req.params.id, 'with skills:', skills.length);
+    
     const employee = await Employee.findByPk(req.params.id, { transaction: t });
     if (!employee) {
       await t.rollback();
@@ -213,7 +216,7 @@ const updateEmployee = async (req, res) => {
     }
 
     await employee.update(
-      { name, position, hire_date, email, phone, gender, location, notes },
+      { name, position, hire_date, email, phone, gender, location, department, notes },
       { transaction: t }
     );
 
@@ -228,9 +231,11 @@ const updateEmployee = async (req, res) => {
       transaction: t,
     });
 
+    console.log('Employee updated successfully with skills:', updatedEmployee.EmployeeSkills?.length || 0);
     await t.commit();
     res.json(updatedEmployee);
   } catch (error) {
+    console.error('Error updating employee:', error);
     await t.rollback();
     res.status(500).json({ error: error.message });
   }
@@ -256,7 +261,7 @@ const deleteEmployee = async (req, res) => {
     await t.commit();
     res.json({ message: "Employee supprimée avec succès" });
   } catch (error) {
-    console.error('Error updating employee:', error);
+    console.error('Error deleting employee:', error);
     await t.rollback();
     res.status(500).json({ error: error.message });
   }

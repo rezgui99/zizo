@@ -90,10 +90,10 @@ export class EmployeesComponent implements OnInit {
       position: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
       hire_date: ['', Validators.required],
-      phone: [''],
+      phone: ['', [Validators.pattern(/^\+?[0-9\s\-\(\)\.]{7,20}$/)]],
       gender: [''],
-      location: [''],
-      department: [''],
+      location: ['', [Validators.maxLength(100)]],
+      department: ['', [Validators.maxLength(100)]],
       notes: [''],
       skills: this.formBuilder.array([])
     });
@@ -154,6 +154,7 @@ export class EmployeesComponent implements OnInit {
       phone: employee.phone || '',
       gender: employee.gender || '',
       location: employee.location || '',
+      department: employee.department || '',
       notes: employee.notes || '',
     });
 
@@ -198,6 +199,15 @@ export class EmployeesComponent implements OnInit {
       } as Employee;
       
       console.log('Employee data being sent:', JSON.stringify(employeeData, null, 2));
+      console.log('Form validation status:', this.employeeForm.valid);
+      console.log('Form errors:', this.employeeForm.errors);
+      console.log('Individual field errors:');
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        if (control?.errors) {
+          console.log(`${key}:`, control.errors);
+        }
+      });
       
       if (this.editingEmployee) {
         this.employeeService.updateEmployee(this.editingEmployee.id!, employeeData).subscribe({
@@ -214,7 +224,14 @@ export class EmployeesComponent implements OnInit {
           error: (err) => {
             console.error('Error updating employee:', err);
             console.error('Full error object:', err);
-            this.errorMessage = `Erreur mise à jour: ${err.error?.message || err.error?.error || err.message || 'Erreur inconnue'}`;
+            console.error('Error details:', err.error?.details);
+            let errorMsg = 'Erreur lors de la mise à jour de l\'employé';
+            if (err.error?.details && Array.isArray(err.error.details)) {
+              errorMsg = err.error.details.join(', ');
+            } else if (err.error?.message) {
+              errorMsg = err.error.message;
+            }
+            this.errorMessage = errorMsg;
             this.savingEmployee = false;
           }
         });
@@ -233,19 +250,18 @@ export class EmployeesComponent implements OnInit {
             console.error('Full error object:', err);
             console.error('Error status:', err.status);
             console.error('Error details:', err.error);
+            console.error('Validation details:', err.error?.details);
             
             let errorMsg = 'Erreur lors de la création de l\'employé';
-            if (err.error?.message) {
-              errorMsg = err.error.message;
-            } else if (err.error?.details && Array.isArray(err.error.details)) {
+            if (err.error?.details && Array.isArray(err.error.details)) {
               errorMsg = err.error.details.join(', ');
-            } else if (err.error?.error) {
-              errorMsg = err.error.error;
+            } else if (err.error?.message) {
+              errorMsg = err.error.message;
             } else if (err.message) {
               errorMsg = err.message;
             }
             
-            this.errorMessage = `Erreur création: ${errorMsg}`;
+            this.errorMessage = errorMsg;
             this.savingEmployee = false;
           }
         });
@@ -253,6 +269,13 @@ export class EmployeesComponent implements OnInit {
     } else {
       console.log('Form is invalid:', this.employeeForm.errors);
       console.log('Form value:', this.employeeForm.value);
+      console.log('Form validation details:');
+      Object.keys(this.employeeForm.controls).forEach(key => {
+        const control = this.employeeForm.get(key);
+        if (control?.invalid) {
+          console.log(`${key} is invalid:`, control.errors);
+        }
+      });
       
       // Mark all fields as touched to show validation errors
       Object.keys(this.employeeForm.controls).forEach(key => {
