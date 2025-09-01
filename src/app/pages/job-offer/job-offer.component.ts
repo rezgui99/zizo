@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { JobDescriptionService } from '../../services/job-description.service';
+import { JobOfferService } from '../../services/job-offer.service';
 import { JobDescription } from '../../models/job-description.model';
 
 export interface JobOffer {
@@ -62,7 +63,8 @@ export class JobOfferComponent implements OnInit {
     private formBuilder: FormBuilder,
     private route: ActivatedRoute,
     private router: Router,
-    private jobDescriptionService: JobDescriptionService
+    private jobDescriptionService: JobDescriptionService,
+    private jobOfferService: JobOfferService
   ) {
     this.jobOfferForm = this.formBuilder.group({
       title: ['', [Validators.required, Validators.minLength(5)]],
@@ -151,6 +153,25 @@ export class JobOfferComponent implements OnInit {
       description += '\n';
     }
 
+    // Ajouter les compétences requises à la description
+    if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
+      description += `**Compétences techniques requises :**\n`;
+      jobDescription.requiredSkills.forEach(skill => {
+        const skillName = skill.skill?.name || 'Compétence non définie';
+        const levelName = skill.skill_level?.level_name || 'Niveau non défini';
+        description += `• ${skillName} - Niveau ${levelName}\n`;
+      });
+      description += '\n';
+    }
+
+    // Ajouter les moyens disponibles
+    if (jobDescription.moyens && jobDescription.moyens.length > 0) {
+      description += `**Moyens et outils à disposition :**\n`;
+      jobDescription.moyens.forEach(moyen => {
+        description += `• ${moyen.moyen}\n`;
+      });
+      description += '\n';
+    }
     // Pré-remplir le formulaire
     this.jobOfferForm.patchValue({
       title: title,
@@ -162,7 +183,9 @@ export class JobOfferComponent implements OnInit {
     this.clearFormArray(this.requirementsArray);
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       jobDescription.requiredSkills.forEach(skill => {
-        const requirement = `${skill.skill?.name} - Niveau ${skill.skill_level?.level_name || 'requis'}`;
+        const skillName = skill.skill?.name || 'Compétence non définie';
+        const levelName = skill.skill_level?.level_name || 'Niveau requis';
+        const requirement = `${skillName} - Niveau ${levelName}`;
         this.addRequirement(requirement);
       });
     }
@@ -226,22 +249,29 @@ export class JobOfferComponent implements OnInit {
         ...this.jobOfferForm.value,
         requirements: this.requirementsArray.value,
         benefits: this.benefitsArray.value,
-        created_by: 1 // TODO: Intégrer avec AuthService pour récupérer l'ID utilisateur
+        created_by: 1, // TODO: Intégrer avec AuthService pour récupérer l'ID utilisateur
+        job_description_id: parseInt(this.jobOfferForm.value.job_description_id, 10)
       };
 
-      // TODO: Implémenter l'appel API pour créer l'offre d'emploi
       console.log('Job Offer Data:', jobOfferData);
       
-      // Simulation d'un appel API
-      setTimeout(() => {
-        this.successMessage = 'Offre d\'emploi créée avec succès !';
-        this.saving = false;
-        
-        // Rediriger vers la liste des offres après 2 secondes
-        setTimeout(() => {
-          this.router.navigate(['/job-descriptions']);
-        }, 2000);
-      }, 1000);
+      // Créer l'offre d'emploi
+      this.jobOfferService.createJobOffer(jobOfferData).subscribe({
+        next: (createdOffer) => {
+          this.successMessage = 'Offre d\'emploi créée avec succès !';
+          this.saving = false;
+          
+          // Rediriger vers la liste des offres après 2 secondes
+          setTimeout(() => {
+            this.router.navigate(['/job-descriptions']);
+          }, 2000);
+        },
+        error: (err) => {
+          console.error('Error creating job offer:', err);
+          this.errorMessage = `Erreur lors de la création: ${err.error?.message || err.message}`;
+          this.saving = false;
+        }
+      });
     } else {
       this.markFormGroupTouched();
       this.errorMessage = 'Veuillez remplir tous les champs obligatoires.';
@@ -255,7 +285,36 @@ export class JobOfferComponent implements OnInit {
 
   publishOffer(): void {
     this.jobOfferForm.patchValue({ status: 'published' });
-    this.onSubmit();
+    
+    if (this.jobOfferForm.valid) {
+      this.saving = true;
+      this.errorMessage = null;
+
+      const jobOfferData: JobOffer = {
+        ...this.jobOfferForm.value,
+        requirements: this.requirementsArray.value,
+        benefits: this.benefitsArray.value,
+        created_by: 1,
+        job_description_id: parseInt(this.jobOfferForm.value.job_description_id, 10),
+        status: 'published'
+      };
+
+      this.jobOfferService.publishJobOfferToPublic(jobOfferData).subscribe({
+        next: (publishedOffer) => {
+          this.successMessage = 'Offre d\'emploi publiée avec succès !';
+          this.saving = false;
+          
+          setTimeout(() => {
+            this.router.navigate(['/job-descriptions']);
+          }, 2000);
+        },
+        error: (err) => {
+          console.error('Error publishing job offer:', err);
+          this.errorMessage = `Erreur lors de la publication: ${err.error?.message || err.message}`;
+          this.saving = false;
+        }
+      });
+    }
   }
 
   private markFormGroupTouched(): void {

@@ -1,0 +1,136 @@
+/* Chatbot styles */
+.chat-window {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation pour les messages */
+.message-enter {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animation pour l'indicateur de frappe */
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s infinite;
+}
+
+/* Styles pour les différents types de messages */
+.message-user {
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.message-bot {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+.message-error {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border: 1px solid #f87171;
+}
+
+.message-recommendation {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  border: 1px solid #34d399;
+}
+
+.message-training {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  border: 1px solid #60a5fa;
+}
+
+/* Hover effects */
+.suggestion-button {
+  transition: all 0.2s ease-in-out;
+}
+
+.suggestion-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .chat-window {
+    width: calc(100vw - 2rem);
+    height: 70vh;
+    right: 1rem;
+    bottom: 5rem;
+  }
+}
+
+/* Scrollbar personnalisée */
+.messages-container::-webkit-scrollbar {
+  width: 4px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation du bouton principal */
+.chat-button {
+  transition: all 0.3s ease;
+}
+
+.chat-button:hover {
+  transform: scale(1.1);
+}
+
+.chat-button.open {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Pulse animation pour attirer l'attention */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s infinite;
+}

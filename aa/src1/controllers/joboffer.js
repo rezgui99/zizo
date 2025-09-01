@@ -1,12 +1,28 @@
 const db = require("../../models/index");
-const { JobOffer, JobDescription, User, sequelize } = db;
+const { JobOffer, JobDescription, User, Skill, SkillLevel, JobRequiredSkill, sequelize } = db;
 
 // Inclusions pour les relations
 const includeRelations = () => [
   {
     model: JobDescription,
     as: "jobDescription",
-    attributes: ["id", "emploi", "filiere_activite", "famille"]
+    attributes: ["id", "emploi", "filiere_activite", "famille"],
+    include: [
+      {
+        model: JobRequiredSkill,
+        as: "requiredSkills",
+        include: [
+          {
+            model: Skill,
+            attributes: ["id", "name"]
+          },
+          {
+            model: SkillLevel,
+            attributes: ["id", "level_name", "value"]
+          }
+        ]
+      }
+    ]
   },
   {
     model: User,
@@ -460,6 +476,33 @@ const duplicateJobOffer = async (req, res) => {
   }
 };
 
+// POST publish job offer to public
+const publishJobOfferToPublic = async (req, res) => {
+  const t = await sequelize.transaction();
+  
+  try {
+    const jobOfferData = {
+      ...req.body,
+      status: 'published',
+      published_at: new Date()
+    };
+
+    const jobOffer = await JobOffer.create(jobOfferData, { transaction: t });
+
+    const createdJobOffer = await JobOffer.findByPk(jobOffer.id, {
+      include: includeRelations(),
+      transaction: t
+    });
+
+    await t.commit();
+    res.status(201).json(createdJobOffer);
+  } catch (err) {
+    await t.rollback();
+    console.error("Error in publishJobOfferToPublic:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   findAllJobOffers,
   findJobOfferById,
@@ -469,5 +512,6 @@ module.exports = {
   publishJobOffer,
   closeJobOffer,
   getJobOfferStatistics,
-  duplicateJobOffer
+  duplicateJobOffer,
+  publishJobOfferToPublic
 };

@@ -12,7 +12,8 @@ const {
   publishJobOffer,
   closeJobOffer,
   getJobOfferStatistics,
-  duplicateJobOffer
+  duplicateJobOffer,
+  publishJobOfferToPublic
 } = require("../controllers/joboffer");
 
 // Routes publiques (pour les candidats)
@@ -31,5 +32,8 @@ router.delete("/:id", requireAdminOrHR, auditAction('DELETE', 'JobOffers'), dele
 router.patch("/:id/publish", requireAdminOrHR, auditAction('UPDATE', 'JobOffers'), publishJobOffer);
 router.patch("/:id/close", requireAdminOrHR, auditAction('UPDATE', 'JobOffers'), closeJobOffer);
 router.post("/:id/duplicate", requireAdminOrHR, auditAction('CREATE', 'JobOffers'), duplicateJobOffer);
+
+// Route pour publier une offre
+router.post("/publish", requireAdminOrHR, auditAction('CREATE', 'JobOffers'), publishJobOfferToPublic);
 
 module.exports = router;

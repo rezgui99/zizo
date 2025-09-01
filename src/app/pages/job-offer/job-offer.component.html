@@ -37,7 +37,7 @@
               <label class="block text-gray-700 text-sm font-bold mb-2">
                 Sélectionner une fiche de poste *
                 <span class="text-xs text-gray-500 font-normal ml-2">
-                  (Les informations seront pré-remplies automatiquement)
+                  (Les informations et compétences seront pré-remplies automatiquement)
                 </span>
               </label>
               <select formControlName="job_description_id" 
@@ -45,7 +45,8 @@
                       class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                 <option value="">-- Choisir une fiche de poste --</option>
                 <option *ngFor="let job of jobDescriptions" [value]="job.id">
-                  {{ job.emploi }} - {{ job.filiere_activite }} ({{ job.famille }})
+                  {{ job.emploi }} - {{ job.filiere_activite }} 
+                  <span *ngIf="job.requiredSkills">({{ job.requiredSkills.length }} compétences)</span>
                 </option>
               </select>
               <div *ngIf="getFieldError('job_description_id')" class="text-red-500 text-xs mt-1">
@@ -374,9 +375,22 @@
             <p><strong>Emploi :</strong> {{ selectedJobDescription.emploi }}</p>
             <p><strong>Filière :</strong> {{ selectedJobDescription.filiere_activite }}</p>
             <p><strong>Famille :</strong> {{ selectedJobDescription.famille }}</p>
-            <p *ngIf="selectedJobDescription.requiredSkills">
-              <strong>Compétences :</strong> {{ selectedJobDescription.requiredSkills.length }} définies
+            <p *ngIf="selectedJobDescription.requiredSkills && selectedJobDescription.requiredSkills.length > 0">
+              <strong>Compétences requises :</strong> {{ selectedJobDescription.requiredSkills.length }}
             </p>
+            <div *ngIf="selectedJobDescription.requiredSkills && selectedJobDescription.requiredSkills.length > 0" class="mt-2">
+              <p class="font-medium text-blue-800 mb-1">Compétences clés :</p>
+              <div class="flex flex-wrap gap-1">
+                <span *ngFor="let skill of selectedJobDescription.requiredSkills.slice(0, 3)" 
+                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
+                  {{ skill.skill?.name || 'Compétence' }}
+                </span>
+                <span *ngIf="selectedJobDescription.requiredSkills.length > 3" 
+                      class="text-xs text-blue-600">
+                  +{{ selectedJobDescription.requiredSkills.length - 3 }} autres...
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 

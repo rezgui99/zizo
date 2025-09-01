@@ -14,4 +14,7 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+
+  <!-- Chatbot (visible partout sauf sur les pages d'auth) -->
+  <app-chatbot *ngIf="showSidebar"></app-chatbot>
 </div>

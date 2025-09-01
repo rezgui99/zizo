@@ -411,4 +411,10 @@ export class JobDescriptionsComponent implements OnInit {
   navigateToMatching(jobId: number): void {
     this.router.navigate(['/matching'], { queryParams: { jobId: jobId } });
   }
+
+  createJobOffer(jobDescription: JobDescription): void {
+    this.router.navigate(['/job-offer/create'], { 
+      queryParams: { jobDescriptionId: jobDescription.id } 
+    });
+  }
 }

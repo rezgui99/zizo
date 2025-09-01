@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { JobDescription } from '../models/job-description.model';
 
 export interface JobOffer {
   id?: number;
@@ -86,5 +87,28 @@ export class JobOfferService {
 
   duplicateJobOffer(id: number): Observable<JobOffer> {
     return this.http.post<JobOffer>(`${this.apiUrl}/${id}/duplicate`, {});
+  }
+
+  // Publier une offre d'emploi
+  publishJobOfferToPublic(jobOffer: Partial<JobOffer>): Observable<JobOffer> {
+    return this.http.post<JobOffer>(`${this.apiUrl}/publish`, {
+      ...jobOffer,
+      status: 'published',
+      published_at: new Date().toISOString()
+    });
+  }
+
+  // Obtenir les offres publiées (pour le public)
+  getPublishedJobOffers(filters?: JobOfferFilters): Observable<JobOffer[]> {
+    let params = new HttpParams().set('status', 'published');
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        const value = (filters as any)[key];
+        if (value !== null && value !== undefined && value !== '') {
+          params = params.set(key, value.toString());
+        }
+      });
+    }
+    return this.http.get<JobOffer[]>(`${this.apiUrl}/public`, { params });
   }
 }

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
+import { ChatbotComponent } from './components/chatbot/chatbot.component';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
@@ -8,7 +9,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent,CommonModule],
+  imports: [RouterOutlet, SidebarComponent, ChatbotComponent, CommonModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
