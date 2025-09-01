@@ -182,7 +182,7 @@ const createJobOffer = async (req, res) => {
       benefits: Array.isArray(benefits) ? benefits : [],
       job_description_id: parseInt(job_description_id),
       status,
-      created_by: req.user?.id || 1, // TODO: Récupérer l'ID de l'utilisateur connecté
+      created_by: req.user?.id || 1,
       published_at: status === 'published' ? new Date() : null
     };
 
@@ -194,6 +194,15 @@ const createJobOffer = async (req, res) => {
     });
 
     await t.commit();
+    
+    // Log de succès pour debug
+    console.log('✅ Offre d\'emploi créée avec succès:', {
+      id: createdJobOffer.id,
+      title: createdJobOffer.title,
+      status: createdJobOffer.status,
+      job_description_id: createdJobOffer.job_description_id
+    });
+    
     res.status(201).json(createdJobOffer);
   } catch (err) {
     await t.rollback();

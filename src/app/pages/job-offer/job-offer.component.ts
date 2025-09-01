@@ -157,8 +157,9 @@ export class JobOfferComponent implements OnInit {
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       description += `**Compétences techniques requises :**\n`;
       jobDescription.requiredSkills.forEach(skill => {
-        const skillName = skill.skill?.name || 'Compétence non définie';
-        const levelName = skill.skill_level?.level_name || 'Niveau non défini';
+        // Gérer les différentes structures de données possibles
+        const skillName = skill.skill?.name || skill.Skill?.name || 'Compétence non définie';
+        const levelName = skill.skill_level?.level_name || skill.SkillLevel?.level_name || 'Niveau non défini';
         description += `• ${skillName} - Niveau ${levelName}\n`;
       });
       description += '\n';
@@ -183,8 +184,9 @@ export class JobOfferComponent implements OnInit {
     this.clearFormArray(this.requirementsArray);
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       jobDescription.requiredSkills.forEach(skill => {
-        const skillName = skill.skill?.name || 'Compétence non définie';
-        const levelName = skill.skill_level?.level_name || 'Niveau requis';
+        // Gérer les différentes structures de données possibles
+        const skillName = skill.skill?.name || skill.Skill?.name || 'Compétence non définie';
+        const levelName = skill.skill_level?.level_name || skill.SkillLevel?.level_name || 'Niveau requis';
         const requirement = `${skillName} - Niveau ${levelName}`;
         this.addRequirement(requirement);
       });

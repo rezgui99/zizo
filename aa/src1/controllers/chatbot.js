@@ -141,7 +141,8 @@ function isJobMatchingQuery(question) {
   const keywords = [
     'meilleur employé', 'employé adequat', 'candidat idéal', 'qui convient',
     'pour ce poste', 'pour le poste', 'matching', 'correspondance',
-    'recommander', 'suggérer un employé', 'qui peut faire'
+    'recommander', 'suggérer un employé', 'qui peut faire', 'qui peut occuper',
+    'candidat pour', 'employé pour', 'personne pour', 'profil pour'
   ];
   return keywords.some(keyword => question.includes(keyword));
 }
@@ -149,7 +150,8 @@ function isJobMatchingQuery(question) {
 function isEmployeeInfoQuery(question) {
   const keywords = [
     'employé', 'collaborateur', 'profil', 'compétences de',
-    'qui est', 'informations sur', 'détails sur'
+    'qui est', 'informations sur', 'détails sur', 'présenter',
+    'cv de', 'parcours de', 'expérience de'
   ];
   return keywords.some(keyword => question.includes(keyword));
 }
@@ -157,7 +159,8 @@ function isEmployeeInfoQuery(question) {
 function isTrainingQuery(question) {
   const keywords = [
     'formation', 'développer', 'améliorer', 'apprendre',
-    'monter en compétence', 'lacune', 'gap', 'manque', 'former'
+    'monter en compétence', 'lacune', 'gap', 'manque', 'former',
+    'plan de formation', 'développement', 'progression', 'évolution'
   ];
   return keywords.some(keyword => question.includes(keyword));
 }
@@ -165,7 +168,8 @@ function isTrainingQuery(question) {
 function isStatisticsQuery(question) {
   const keywords = [
     'statistiques', 'combien', 'nombre', 'total',
-    'département', 'équipe', 'organisation', 'stats'
+    'département', 'équipe', 'organisation', 'stats',
+    'aperçu', 'vue d\'ensemble', 'résumé', 'bilan'
   ];
   return keywords.some(keyword => question.includes(keyword));
 }
@@ -241,7 +245,7 @@ async function handleJobMatchingQuery(question, context) {
       ).join('\n');
       
       return {
-        response: `🎯 Pour vous aider à trouver le meilleur employé, voici les postes disponibles :\n\n${jobsList}\n\nPouvez-vous préciser pour quel poste vous cherchez un candidat ?`,
+        response: `🎯 **Postes disponibles dans votre organisation :**\n\n${jobsList}\n\n💡 **Exemples de questions :**\n• "Quel est le meilleur employé pour le poste de [NOM_DU_POSTE] ?"\n• "Qui peut occuper le poste de Développeur Full Stack ?"\n• "Recommandez-moi un candidat pour Manager Commercial"`,
         type: 'job-list',
         data: { jobDescriptions }
       };
@@ -316,6 +320,7 @@ async function handleStatisticsQuery(question) {
   try {
     const employees = await Employee.findAll();
     const jobDescriptions = await JobDescription.findAll();
+    const skills = await Skill.findAll();
     
     const totalEmployees = employees.length;
     const departments = [...new Set(employees.map(emp => emp.department).filter(Boolean))];
@@ -326,6 +331,7 @@ async function handleStatisticsQuery(question) {
     response += `🏢 Départements : ${departments.length}\n`;
     response += `💼 Postes différents : ${positions.length}\n`;
     response += `📋 Fiches de poste : ${jobDescriptions.length}\n\n`;
+    response += `🎯 Compétences référencées : ${skills.length}\n\n`;
     
     if (departments.length > 0) {
       response += `**Répartition par département :**\n`;
@@ -333,6 +339,10 @@ async function handleStatisticsQuery(question) {
         const count = employees.filter(emp => emp.department === dept).length;
         response += `• ${dept}: ${count} employé(s)\n`;
       });
+      
+      if (departments.length > 5) {
+        response += `... et ${departments.length - 5} autres départements\n`;
+      }
     }
 
     return { response, type: 'statistics' };
@@ -350,8 +360,22 @@ function extractJobFromQuestion(question, jobDescriptions) {
   const lowerQuestion = question.toLowerCase();
   
   for (const job of jobDescriptions) {
-    if (lowerQuestion.includes(job.emploi.toLowerCase()) || 
-        lowerQuestion.includes(job.filiere_activite.toLowerCase())) {
+    const jobTitle = job.emploi.toLowerCase();
+    const jobDepartment = job.filiere_activite.toLowerCase();
+    
+    // Recherche exacte d'abord
+    if (lowerQuestion.includes(jobTitle)) {
+      return job;
+    }
+    
+    // Puis recherche par mots-clés dans le département
+    if (lowerQuestion.includes(jobDepartment)) {
+      return job;
+    }
+    
+    // Recherche par mots-clés partiels
+    const jobWords = jobTitle.split(' ');
+    if (jobWords.some(word => word.length > 3 && lowerQuestion.includes(word))) {
       return job;
     }
   }
@@ -508,6 +532,13 @@ function formatEmployeeRecommendationResponse(bestMatch, jobDescription, trainin
       const priorityEmoji = training.priority === 'high' ? '🔴' : training.priority === 'medium' ? '🟡' : '🟢';
       response += `${priorityEmoji} ${training.skill_name}: ${training.current_level} → ${training.target_level} (${training.estimated_duration})\n`;
     });
+    
+    response += `\n💡 **Recommandation :** `;
+    if (bestMatch.score >= 70) {
+      response += `Candidat recommandé ! Commencer la formation en parallèle de la prise de poste.`;
+    } else {
+      response += `Former avant l'affectation pour optimiser les chances de succès.`;
+    }
   }
 
   return response;
@@ -541,7 +572,142 @@ function formatEmployeeProfile(employee) {
   return response;
 }
 
+// Suggérer des formations pour combler les lacunes
+const suggestTrainingForEmployee = async (req, res) => {
+  try {
+    const { employee_id, target_job_id } = req.body;
+    
+    if (!employee_id || !target_job_id) {
+      return res.status(400).json({ 
+        error: 'ID employé et ID poste cible requis',
+        response: 'Veuillez spécifier l\'employé et le poste cible.'
+      });
+    }
+
+    // Récupérer l'employé avec ses compétences
+    const employee = await Employee.findByPk(employee_id, {
+      include: [
+        {
+          model: EmployeeSkill,
+          as: 'EmployeeSkills',
+          include: [
+            { model: Skill, as: 'Skill' },
+            { model: SkillLevel, as: 'SkillLevel' }
+          ]
+        }
+      ]
+    });
+
+    if (!employee) {
+      return res.status(404).json({ 
+        error: 'Employé non trouvé',
+        response: 'Cet employé n\'existe pas dans la base de données.'
+      });
+    }
+
+    // Récupérer le poste cible avec ses compétences requises
+    const targetJob = await JobDescription.findByPk(target_job_id, {
+      include: [
+        {
+          model: JobRequiredSkill,
+          as: "requiredSkills",
+          include: [
+            { model: Skill, attributes: ["id", "name"] },
+            { model: SkillLevel, attributes: ["id", "level_name", "value"] }
+          ]
+        }
+      ]
+    });
+
+    if (!targetJob) {
+      return res.status(404).json({ 
+        error: 'Poste cible non trouvé',
+        response: 'Ce poste n\'existe pas dans la base de données.'
+      });
+    }
+
+    // Calculer les lacunes et générer les suggestions
+    const matchingResults = calculateEmployeeJobMatching([employee], targetJob);
+    const employeeResult = matchingResults[0];
+    
+    if (!employeeResult) {
+      return res.json({
+        response: `❌ Impossible d'analyser les compétences de ${employee.name} pour le poste "${targetJob.emploi}".`,
+        type: 'error'
+      });
+    }
+
+    const trainingSuggestions = generateTrainingSuggestions(employeeResult.skillGaps);
+    
+    let response = `🎓 **Plan de formation pour ${employee.name}**\n`;
+    response += `🎯 **Poste cible :** ${targetJob.emploi}\n`;
+    response += `📊 **Score actuel :** ${employeeResult.score}%\n\n`;
+
+    if (trainingSuggestions.length === 0) {
+      response += `✅ **Félicitations !** ${employee.name} possède déjà toutes les compétences requises pour ce poste.\n\n`;
+      response += `💡 **Recommandation :** Candidat prêt pour une promotion immédiate !`;
+    } else {
+      response += `📚 **Formations recommandées :**\n\n`;
+      
+      trainingSuggestions.forEach((training, index) => {
+        const priorityEmoji = training.priority === 'high' ? '🔴' : training.priority === 'medium' ? '🟡' : '🟢';
+        response += `${index + 1}. ${priorityEmoji} **${training.skill_name}**\n`;
+        response += `   📈 Niveau actuel : ${training.current_level}\n`;
+        response += `   🎯 Niveau cible : ${training.target_level}\n`;
+        response += `   ⏱️ Durée estimée : ${training.estimated_duration}\n`;
+        response += `   📝 ${training.description}\n\n`;
+      });
+
+      const totalDuration = estimateTotalTrainingDuration(trainingSuggestions);
+      response += `⏰ **Durée totale estimée :** ${totalDuration}\n`;
+      response += `💰 **Investissement recommandé :** Formation prioritaire sur les compétences critiques`;
+    }
+
+    res.json({
+      response,
+      training_plan: {
+        employee: {
+          id: employee.id,
+          name: employee.name,
+          current_position: employee.position
+        },
+        target_job: {
+          id: targetJob.id,
+          title: targetJob.emploi,
+          department: targetJob.filiere_activite
+        },
+        current_score: employeeResult.score,
+        training_suggestions: trainingSuggestions,
+        estimated_completion: totalDuration
+      },
+      type: 'training-suggestion'
+  } catch (error) {
+    console.error('Error in suggestTrainingForEmployee:', error);
+    res.status(500).json({ 
+      error: 'Erreur serveur',
+      response: 'Erreur lors de la génération du plan de formation.'
+    });
+  }
+};
+
+// Fonction utilitaire pour estimer la durée totale
+function estimateTotalTrainingDuration(trainingSuggestions) {
+  const durations = trainingSuggestions.map(t => {
+    if (t.estimated_duration.includes('1-3')) return 2;
+    if (t.estimated_duration.includes('3-6')) return 4.5;
+    if (t.estimated_duration.includes('6-12')) return 9;
+    return 6; // défaut
+  });
+  
+  const maxDuration = Math.max(...durations);
+  if (maxDuration <= 3) return '1-3 mois';
+  if (maxDuration <= 6) return '3-6 mois';
+  if (maxDuration <= 12) return '6-12 mois';
+  return '12+ mois';
+}
+    });
 module.exports = {
   processQuestion,
-  findBestEmployeeForJob
+  findBestEmployeeForJob,
+  suggestTrainingForEmployee
 };

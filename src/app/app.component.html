@@ -16,5 +16,5 @@
   </div>
 
   <!-- Chatbot (visible partout sauf sur les pages d'auth) -->
-  <app-chatbot *ngIf="showSidebar"></app-chatbot>
+  <app-chatbot *ngIf="showSidebar && !isAuthPage"></app-chatbot>
 </div>

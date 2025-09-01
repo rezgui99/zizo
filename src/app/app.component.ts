@@ -15,6 +15,7 @@ import { CommonModule } from '@angular/common';
 })
 export class AppComponent {
   showSidebar = true;
+  isAuthPage = false;
 
   constructor(private router: Router) {
     // Écoute uniquement les événements de fin de navigation
@@ -24,6 +25,7 @@ export class AppComponent {
         // Masquer la sidebar sur certaines routes
         const authPages = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password']; 
         this.showSidebar = !authPages.includes(event.urlAfterRedirects);
+        this.isAuthPage = authPages.includes(event.urlAfterRedirects);
       });
   }
   title = 'Smarthire';

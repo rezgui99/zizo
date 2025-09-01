@@ -47,6 +47,19 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
 
     // Charger les fiches de poste pour les suggestions
     this.loadJobDescriptions();
+    
+    // Ajouter un message d'aide contextuel après 3 secondes si aucun message
+    setTimeout(() => {
+      if (this.messages.length <= 1) {
+        this.showContextualHelp();
+      }
+    }, 3000);
+  }
+
+  private showContextualHelp(): void {
+    const helpMessage = `💡 **Exemples de questions que vous pouvez me poser :**\n\n🎯 **Matching :**\n• "Quel est le meilleur employé pour le poste de Développeur ?"\n• "Qui peut occuper le poste de Manager Commercial ?"\n\n🎓 **Formation :**\n• "Quelles formations pour Jean Dupont ?"\n• "Comment améliorer les compétences de l'équipe ?"\n\n📊 **Statistiques :**\n• "Combien d'employés dans l'organisation ?"\n• "Quelles sont les compétences les plus demandées ?"`;
+    
+    this.chatbotService.addBotMessage(helpMessage, 'help');
   }
 
   ngAfterViewChecked(): void {
@@ -90,9 +103,25 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   selectJobForMatching(job: JobDescription): void {
-    const message = `Quel est le meilleur employé pour le poste de ${job.emploi} ?`;
+    const message = `Quel est le meilleur employé pour le poste de ${job.emploi} dans la filière ${job.filiere_activite} ?`;
     this.currentMessage = message;
     this.sendMessage();
+  }
+
+  viewEmployeeProfile(employeeId: number): void {
+    // Naviguer vers le profil de l'employé
+    window.open(`/profile/${employeeId}`, '_blank');
+  }
+
+  startMatching(employeeId: number): void {
+    // Naviguer vers la page de matching avec l'employé pré-sélectionné
+    window.open(`/matching?employeeId=${employeeId}`, '_blank');
+  }
+
+  private showContextualHelp(): void {
+    const helpMessage = `💡 **Exemples de questions que vous pouvez me poser :**\n\n🎯 **Matching :**\n• "Quel est le meilleur employé pour le poste de Développeur ?"\n• "Qui peut occuper le poste de Manager Commercial ?"\n\n🎓 **Formation :**\n• "Quelles formations pour Jean Dupont ?"\n• "Comment améliorer les compétences de l'équipe ?"\n\n📊 **Statistiques :**\n• "Combien d'employés dans l'organisation ?"\n• "Quelles sont les compétences les plus demandées ?"`;
+    
+    this.chatbotService.addBotMessage(helpMessage, 'help');
   }
 
   clearChat(): void {
@@ -131,6 +160,10 @@ export class ChatbotComponent implements OnInit, OnDestroy, AfterViewChecked {
           return 'bg-green-100 text-green-800 border border-green-200';
         case 'training-suggestion':
           return 'bg-blue-100 text-blue-800 border border-blue-200';
+        case 'help':
+          return 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+        case 'job-list':
+          return 'bg-purple-100 text-purple-800 border border-purple-200';
         default:
           return 'bg-gray-100 text-gray-800';
       }

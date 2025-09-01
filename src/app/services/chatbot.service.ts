@@ -412,6 +412,51 @@ export class ChatbotService {
     });
   }
 
+  private handleTrainingQuery(text: string): Observable<{text: string, type: string, data?: any}> {
+    return new Observable(observer => {
+      observer.next({
+        text: `🎓 **Suggestions de formation :**\n\nPour vous donner des recommandations précises, j'ai besoin de savoir :\n\n1. Pour quel employé ?\n2. Pour quel poste cible ?\n\nExemple : "Quelles formations pour Jean Dupont pour devenir Développeur Senior ?"`,
+        type: 'training-suggestion'
+      });
+      observer.complete();
+    });
+  }
+
+  private handleGeneralHRQuery(text: string): Observable<{text: string, type: string}> {
+    return new Observable(observer => {
+      this.employeeService.getEmployees().subscribe({
+        next: (employees) => {
+          const totalEmployees = employees.length;
+          const departments = [...new Set(employees.map(emp => emp.department).filter(Boolean))];
+          const positions = [...new Set(employees.map(emp => emp.position))];
+          
+          let response = `📊 **Aperçu de votre organisation :**\n\n`;
+          response += `👥 Total employés : ${totalEmployees}\n`;
+          response += `🏢 Départements : ${departments.length}\n`;
+          response += `💼 Postes différents : ${positions.length}\n\n`;
+          
+          if (departments.length > 0) {
+            response += `**Départements :**\n`;
+            departments.slice(0, 5).forEach(dept => {
+              const count = employees.filter(emp => emp.department === dept).length;
+              response += `• ${dept}: ${count} employé(s)\n`;
+            });
+          }
+
+          observer.next({ text: response, type: 'text' });
+          observer.complete();
+        },
+        error: () => {
+          observer.next({
+            text: "❌ Erreur lors du chargement des statistiques.",
+            type: 'error'
+          });
+          observer.complete();
+        }
+      });
+    });
+  }
+
   private extractEmployeeNameFromText(text: string, employees: Employee[]): string | null {
     const lowerText = text.toLowerCase();
     
@@ -434,14 +479,16 @@ export class ChatbotService {
     if (employee.location) response += `📍 Localisation : ${employee.location}\n`;
     if (employee.department) response += `🏢 Département : ${employee.department}\n`;
     
-    const skillsCount = employee.skills?.length || 0;
+    // Gérer les différentes structures de compétences
+    const skills = employee.skills || (employee as any).EmployeeSkills || [];
+    const skillsCount = skills.length;
     response += `\n🎯 **Compétences : ${skillsCount}**\n`;
     
     if (skillsCount > 0) {
-      const topSkills = employee.skills!.slice(0, 5);
+      const topSkills = skills.slice(0, 5);
       topSkills.forEach(skill => {
-        const skillName = skill.skill?.name || 'Compétence inconnue';
-        const levelName = skill.SkillLevel?.level_name || 'Niveau inconnu';
+        const skillName = skill.skill?.name || skill.Skill?.name || 'Compétence inconnue';
+        const levelName = skill.SkillLevel?.level_name || skill.skill_level?.level_name || 'Niveau inconnu';
         response += `• ${skillName} (${levelName})\n`;
       });
       
@@ -528,6 +575,16 @@ export class ChatbotService {
         next: (job) => {
           this.findBestEmployeeForJob(job).subscribe({
             next: (recommendation) => observer.next(recommendation),
+    return this.http.post<any>(`${environment.backendUrl}/chatbot/question`, {
+      question: text,
+      context: {
+        user_role: 'hr', // ou récupérer depuis AuthService
+        timestamp: new Date().toISOString()
+      }
+    });
+  }
+
+  private handleGeneralResponse(text: string): Observable<{text: string, type: string}> {
             error: (err) => observer.error(err)
           });
         },
@@ -538,9 +595,73 @@ export class ChatbotService {
 
   getTrainingRecommendations(employeeId: number, targetJobId?: number): Observable<any> {
     if (targetJobId) {
-      return this.analyticsService.getEmployeeSkillRecommendations(employeeId);
+      return this.http.post<any>(`${environment.backendUrl}/chatbot/training-suggestions`, {
+        employee_id: employeeId,
+        target_job_id: targetJobId
+      });
     } else {
-      return this.analyticsService.getEmployeeSkillRecommendations(employeeId);
+      return this.handleDefaultResponse(text);
     }
+  }
+
+  // Méthode pour obtenir des suggestions contextuelles
+  getContextualSuggestions(): Observable<string[]> {
+    return new Observable(observer => {
+      this.jobDescriptionService.getJobDescriptions().subscribe({
+        next: (jobs) => {
+          const suggestions = [
+            'Combien d\'employés dans l\'organisation ?',
+            'Quelles sont les compétences les plus demandées ?',
+            'Qui peut être promu ?'
+          ];
+          
+          // Ajouter des suggestions basées sur les postes disponibles
+          if (jobs.length > 0) {
+            const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+            suggestions.push(`Quel est le meilleur employé pour le poste de ${randomJob.emploi} ?`);
+          }
+          
+          observer.next(suggestions);
+          observer.complete();
+        },
+        error: () => {
+          observer.next([
+            'Combien d\'employés dans l\'organisation ?',
+            'Quelles formations recommandez-vous ?',
+            'Montrez-moi les statistiques RH'
+          ]);
+          observer.complete();
+        }
+      });
+    });
+  }
+
+  // Méthode publique pour ajouter un message du bot
+  addBotMessage(text: string, type: string = 'text'): void {
+    const botMessage: ChatMessage = {
+      id: this.generateId(),
+      text: text,
+      isUser: false,
+      timestamp: new Date(),
+      type: type as any
+    };
+    
+    const currentMessages = this.messagesSubject.value;
+    this.messagesSubject.next([...currentMessages, botMessage]);
+  }
+
+  private handleDefaultResponse(text: string): Observable<{text: string, type: string}> {
+    const responses = [
+      "🤔 Je ne suis pas sûr de comprendre. Pouvez-vous reformuler ?",
+      "💡 Essayez de me demander :\n• 'Quel est le meilleur employé pour le poste de Développeur ?'\n• 'Quelles formations pour améliorer les compétences ?'\n• 'Combien d'employés dans l'équipe ?'",
+      "🔍 Je peux vous aider avec :\n• Matching employé-poste\n• Recommandations de formation\n• Statistiques RH\n• Informations sur les employés"
+    ];
+    
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    return new Observable(observer => {
+      observer.next({ text: randomResponse, type: 'text' });
+      observer.complete();
+    });
   }
 }

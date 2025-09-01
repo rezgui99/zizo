@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { JobDescriptionService } from '../../services/job-description.service';
 import { EmployeeService } from '../../services/employee.service';
@@ -54,12 +55,25 @@ export class MatchingComponent implements OnInit {
     private jobDescriptionService: JobDescriptionService,
     private employeeService: EmployeeService,
     private matchingService: MatchingService,
-    private analyticsService: AnalyticsService
+    private analyticsService: AnalyticsService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.loadJobDescriptions();
     this.loadEmployees();
+    
+    // Vérifier si un employé est pré-sélectionné via les paramètres de requête
+    this.route.queryParams.subscribe(params => {
+      if (params['employeeId']) {
+        this.selectedEmployeeId = parseInt(params['employeeId'], 10);
+        this.performInverseMatching();
+      }
+      if (params['jobId']) {
+        this.selectedJobId = parseInt(params['jobId'], 10);
+        this.performMatching();
+      }
+    });
   }
 
   loadJobDescriptions(): void {
