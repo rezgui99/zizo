@@ -140,21 +140,22 @@ const includeRelations = () => [
   {
     model: JobRequiredSkill,
     as: "requiredSkills",
-    attributes: {
-      exclude: ["job_description_id", "required_skill_level_id"],
-    },
+    attributes: ["skill_id", "required_skill_level_id"],
     include: [
       {
         model: Skill,
+        attributes: ["id", "name", "description"],
         include: [
           {
             model: SkillType,
             as: "type",
+            attributes: ["id", "type_name"]
           },
         ],
       },
       {
         model: SkillLevel,
+        attributes: ["id", "level_name", "value"]
       },
     ],
   },

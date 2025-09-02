@@ -442,20 +442,24 @@ export class JobOfferComponent implements OnInit {
   }
 
   getSkillLevelNameSafe(skill: any): string {
+    console.log('getSkillLevelNameSafe called with:', skill);
     if (!skill) return 'Niveau non défini';
     
     // Structure principale: skill.SkillLevel.level_name (depuis les relations Sequelize)
     if (skill.SkillLevel && skill.SkillLevel.level_name) {
+      console.log('Found level name via SkillLevel relation:', skill.SkillLevel.level_name);
       return skill.SkillLevel.level_name;
     }
     
     // Structure alternative
     if (skill.skill_level && skill.skill_level.level_name) {
+      console.log('Found level name via skill_level property:', skill.skill_level.level_name);
       return skill.skill_level.level_name;
     }
     
     // Nom direct
     if (skill.level_name) {
+      console.log('Found level name directly:', skill.level_name);
       return skill.level_name;
     }
     
@@ -463,15 +467,18 @@ export class JobOfferComponent implements OnInit {
     if (skill.required_skill_level_id && this.skillLevels && this.skillLevels.length > 0) {
       const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
       if (foundLevel && foundLevel.level_name) {
+        console.log('Found level name by ID lookup:', foundLevel.level_name);
         return foundLevel.level_name;
       }
     }
     
     // Dernier recours: afficher l'ID si disponible
     if (skill.required_skill_level_id) {
+      console.log('Fallback to level ID:', skill.required_skill_level_id);
       return `Niveau ID: ${skill.required_skill_level_id}`;
     }
     
+    console.log('No level name found, returning default');
     return 'Niveau non défini';
   }
 
