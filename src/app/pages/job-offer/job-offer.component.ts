@@ -178,32 +178,8 @@ export class JobOfferComponent implements OnInit {
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       description += `**Compétences techniques requises :**\n`;
       jobDescription.requiredSkills.forEach(skill => {
-        // Gestion robuste des structures de données
-        let skillName = 'Compétence non définie';
-        let levelName = 'Niveau non défini';
-        
-        // Essayer différentes structures pour le nom de la compétence
-        if (skill.Skill?.name) {
-          skillName = skill.Skill.name;
-        } else if (skill.skill?.name) {
-          skillName = skill.skill.name;
-        } else if (skill.skill_id) {
-          // Fallback: chercher dans la liste des compétences
-          const foundSkill = this.skills.find(s => s.id === skill.skill_id);
-          if (foundSkill) skillName = foundSkill.name;
-        }
-        
-        // Essayer différentes structures pour le niveau
-        if (skill.SkillLevel?.level_name) {
-          levelName = skill.SkillLevel.level_name;
-        } else if (skill.skill_level?.level_name) {
-          levelName = skill.skill_level.level_name;
-        } else if (skill.required_skill_level_id) {
-          // Fallback: chercher dans la liste des niveaux
-          const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
-          if (foundLevel) levelName = foundLevel.level_name;
-        }
-        
+        const skillName = this.getSkillNameSafe(skill);
+        const levelName = this.getSkillLevelNameSafe(skill);
         description += `• ${skillName} - Niveau ${levelName}\n`;
       });
       description += '\n';
@@ -229,30 +205,8 @@ export class JobOfferComponent implements OnInit {
     this.clearFormArray(this.requirementsArray);
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       jobDescription.requiredSkills.forEach(skill => {
-        // Gestion robuste des structures de données
-        let skillName = 'Compétence non définie';
-        let levelName = 'Niveau requis';
-        
-        // Essayer différentes structures pour le nom de la compétence
-        if (skill.Skill?.name) {
-          skillName = skill.Skill.name;
-        } else if (skill.skill?.name) {
-          skillName = skill.skill.name;
-        } else if (skill.skill_id) {
-          const foundSkill = this.skills.find(s => s.id === skill.skill_id);
-          if (foundSkill) skillName = foundSkill.name;
-        }
-        
-        // Essayer différentes structures pour le niveau
-        if (skill.SkillLevel?.level_name) {
-          levelName = skill.SkillLevel.level_name;
-        } else if (skill.skill_level?.level_name) {
-          levelName = skill.skill_level.level_name;
-        } else if (skill.required_skill_level_id) {
-          const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
-          if (foundLevel) levelName = foundLevel.level_name;
-        }
-        
+        const skillName = this.getSkillNameSafe(skill);
+        const levelName = this.getSkillLevelNameSafe(skill);
         const requirement = `${skillName} - Niveau ${levelName}`;
         this.addRequirement(requirement);
       });
@@ -456,15 +410,32 @@ export class JobOfferComponent implements OnInit {
   getSkillNameSafe(skill: any): string {
     if (!skill) return 'Compétence non définie';
     
-    // Essayer différentes structures
-    if (skill.Skill?.name) return skill.Skill.name;
-    if (skill.skill?.name) return skill.skill.name;
-    if (skill.name) return skill.name;
+    // Structure principale: skill.Skill.name (depuis les relations Sequelize)
+    if (skill.Skill && skill.Skill.name) {
+      return skill.Skill.name;
+    }
     
-    // Fallback avec l'ID
-    if (skill.skill_id) {
+    // Structure alternative: skill.skill.name
+    if (skill.skill && skill.skill.name) {
+      return skill.skill.name;
+    }
+    
+    // Nom direct
+    if (skill.name) {
+      return skill.name;
+    }
+    
+    // Recherche par ID dans la liste des compétences chargées
+    if (skill.skill_id && this.skills && this.skills.length > 0) {
       const foundSkill = this.skills.find(s => s.id === skill.skill_id);
-      if (foundSkill) return foundSkill.name;
+      if (foundSkill && foundSkill.name) {
+        return foundSkill.name;
+      }
+    }
+    
+    // Dernier recours: afficher l'ID si disponible
+    if (skill.skill_id) {
+      return `Compétence ID: ${skill.skill_id}`;
     }
     
     return 'Compétence non définie';
@@ -473,15 +444,32 @@ export class JobOfferComponent implements OnInit {
   getSkillLevelNameSafe(skill: any): string {
     if (!skill) return 'Niveau non défini';
     
-    // Essayer différentes structures
-    if (skill.SkillLevel?.level_name) return skill.SkillLevel.level_name;
-    if (skill.skill_level?.level_name) return skill.skill_level.level_name;
-    if (skill.level_name) return skill.level_name;
+    // Structure principale: skill.SkillLevel.level_name (depuis les relations Sequelize)
+    if (skill.SkillLevel && skill.SkillLevel.level_name) {
+      return skill.SkillLevel.level_name;
+    }
     
-    // Fallback avec l'ID
-    if (skill.required_skill_level_id) {
+    // Structure alternative
+    if (skill.skill_level && skill.skill_level.level_name) {
+      return skill.skill_level.level_name;
+    }
+    
+    // Nom direct
+    if (skill.level_name) {
+      return skill.level_name;
+    }
+    
+    // Recherche par ID dans la liste des niveaux chargés
+    if (skill.required_skill_level_id && this.skillLevels && this.skillLevels.length > 0) {
       const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
-      if (foundLevel) return foundLevel.level_name;
+      if (foundLevel && foundLevel.level_name) {
+        return foundLevel.level_name;
+      }
+    }
+    
+    // Dernier recours: afficher l'ID si disponible
+    if (skill.required_skill_level_id) {
+      return `Niveau ID: ${skill.required_skill_level_id}`;
     }
     
     return 'Niveau non défini';

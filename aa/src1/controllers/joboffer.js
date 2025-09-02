@@ -6,7 +6,7 @@ const includeRelations = () => [
   {
     model: JobDescription,
     as: "jobDescription",
-    attributes: ["id", "emploi", "filiere_activite", "famille"],
+    attributes: ["id", "emploi", "filiere_activite", "famille", "finalite", "niveau_exp"],
     include: [
       {
         model: JobRequiredSkill,
@@ -14,12 +14,10 @@ const includeRelations = () => [
         include: [
           {
             model: Skill,
-            as: "Skill",
             attributes: ["id", "name"]
           },
           {
             model: SkillLevel,
-            as: "SkillLevel",
             attributes: ["id", "level_name", "value"]
           }
         ]

@@ -55,15 +55,7 @@ export class JobOfferService {
         }
       });
     }
-    return this.http.get<any>(this.apiUrl, { params }).pipe(
-      map(response => {
-        // Gérer la réponse qui peut être un objet avec pagination ou un tableau direct
-        if (response.jobOffers) {
-          return response.jobOffers;
-        }
-        return response;
-      })
-    );
+    return this.http.get<JobOffer[]>(this.apiUrl, { params });
   }
 
   getJobOfferById(id: number): Observable<JobOffer> {

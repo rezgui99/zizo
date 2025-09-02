@@ -380,7 +380,7 @@
               <div class="space-y-1">
                 <div *ngFor="let skill of selectedJobDescription.requiredSkills.slice(0, 3)" 
                      class="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded">
-                  {{ getSkillNameSafe(skill) }} - {{ getSkillLevelNameSafe(skill) }}
+                  {{ getSkillNameFromRequiredSkill(skill) }} - {{ getSkillLevelNameFromRequiredSkill(skill) }}
                 </div>
                 <div *ngIf="selectedJobDescription.requiredSkills.length > 3" 
                      class="text-xs text-blue-600">
