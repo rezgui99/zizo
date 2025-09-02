@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { JobDescription } from '../models/job-description.model';
 
@@ -54,7 +55,15 @@ export class JobOfferService {
         }
       });
     }
-    return this.http.get<JobOffer[]>(this.apiUrl, { params });
+    return this.http.get<any>(this.apiUrl, { params }).pipe(
+      map(response => {
+        // Gérer la réponse qui peut être un objet avec pagination ou un tableau direct
+        if (response.jobOffers) {
+          return response.jobOffers;
+        }
+        return response;
+      })
+    );
   }
 
   getJobOfferById(id: number): Observable<JobOffer> {
@@ -109,6 +118,13 @@ export class JobOfferService {
         }
       });
     }
-    return this.http.get<JobOffer[]>(`${this.apiUrl}/public`, { params });
+    return this.http.get<any>(`${this.apiUrl}/public`, { params }).pipe(
+      map(response => {
+        if (response.jobOffers) {
+          return response.jobOffers;
+        }
+        return response;
+      })
+    );
   }
 }

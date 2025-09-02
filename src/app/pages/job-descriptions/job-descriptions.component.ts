@@ -414,6 +414,8 @@ export class JobDescriptionsComponent implements OnInit {
   }
 
   createJobOffer(jobDescription: JobDescription): void {
+    console.log('Creating job offer for:', jobDescription);
+    console.log('Required skills:', jobDescription.requiredSkills);
     this.router.navigate(['/job-offer/create'], { 
       queryParams: { jobDescriptionId: jobDescription.id } 
     });

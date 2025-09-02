@@ -375,20 +375,17 @@
             <p><strong>Emploi :</strong> {{ selectedJobDescription.emploi }}</p>
             <p><strong>Filière :</strong> {{ selectedJobDescription.filiere_activite }}</p>
             <p><strong>Famille :</strong> {{ selectedJobDescription.famille }}</p>
-            <p *ngIf="selectedJobDescription.requiredSkills && selectedJobDescription.requiredSkills.length > 0">
-              <strong>Compétences requises :</strong> {{ selectedJobDescription.requiredSkills.length }}
-            </p>
             <div *ngIf="selectedJobDescription.requiredSkills && selectedJobDescription.requiredSkills.length > 0" class="mt-2">
-              <p class="font-medium text-blue-800 mb-1">Compétences clés :</p>
-              <div class="flex flex-wrap gap-1">
-                <span *ngFor="let skill of selectedJobDescription.requiredSkills.slice(0, 3)" 
-                      class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-200 text-blue-800">
-                  {{ skill.skill?.name || 'Compétence' }}
-                </span>
-                <span *ngIf="selectedJobDescription.requiredSkills.length > 3" 
-                      class="text-xs text-blue-600">
-                  +{{ selectedJobDescription.requiredSkills.length - 3 }} autres...
-                </span>
+              <p class="font-medium text-blue-800 mb-1">{{ selectedJobDescription.requiredSkills.length }} compétences requises :</p>
+              <div class="space-y-1">
+                <div *ngFor="let skill of selectedJobDescription.requiredSkills.slice(0, 3)" 
+                     class="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded">
+                  {{ getSkillNameSafe(skill) }} - {{ getSkillLevelNameSafe(skill) }}
+                </div>
+                <div *ngIf="selectedJobDescription.requiredSkills.length > 3" 
+                     class="text-xs text-blue-600">
+                  +{{ selectedJobDescription.requiredSkills.length - 3 }} autres compétences...
+                </div>
               </div>
             </div>
           </div>

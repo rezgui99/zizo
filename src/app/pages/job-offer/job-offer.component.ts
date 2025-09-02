@@ -4,6 +4,8 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Va
 import { ActivatedRoute, Router } from '@angular/router';
 import { JobDescriptionService } from '../../services/job-description.service';
 import { JobOfferService } from '../../services/job-offer.service';
+import { SkillService } from '../../services/skill.service';
+import { AuthService } from '../../services/auth.service';
 import { JobDescription } from '../../models/job-description.model';
 
 export interface JobOffer {
@@ -38,6 +40,8 @@ export class JobOfferComponent implements OnInit {
   jobOfferForm: FormGroup;
   selectedJobDescription: JobDescription | null = null;
   jobDescriptions: JobDescription[] = [];
+  skills: any[] = [];
+  skillLevels: any[] = [];
   loading: boolean = false;
   saving: boolean = false;
   errorMessage: string | null = null;
@@ -64,7 +68,9 @@ export class JobOfferComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private jobDescriptionService: JobDescriptionService,
-    private jobOfferService: JobOfferService
+    private jobOfferService: JobOfferService,
+    private skillService: SkillService,
+    private authService: AuthService
   ) {
     this.jobOfferForm = this.formBuilder.group({
       title: ['', [Validators.required, Validators.minLength(5)]],
@@ -85,6 +91,7 @@ export class JobOfferComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadJobDescriptions();
+    this.loadSkillsData();
     this.setDefaultDeadline();
     
     // Si un ID de fiche de poste est passé en paramètre
@@ -106,6 +113,7 @@ export class JobOfferComponent implements OnInit {
     this.jobDescriptionService.getJobDescriptions().subscribe({
       next: (jobDescriptions) => {
         this.jobDescriptions = jobDescriptions;
+        console.log('Job descriptions loaded:', jobDescriptions);
       },
       error: (err) => {
         console.error('Error loading job descriptions:', err);
@@ -114,10 +122,23 @@ export class JobOfferComponent implements OnInit {
     });
   }
 
+  loadSkillsData(): void {
+    Promise.all([
+      this.skillService.getSkills().toPromise(),
+      this.skillService.getSkillLevels().toPromise()
+    ]).then(([skills, skillLevels]) => {
+      this.skills = skills || [];
+      this.skillLevels = skillLevels || [];
+      console.log('Skills data loaded:', { skills: this.skills.length, levels: this.skillLevels.length });
+    }).catch(err => {
+      console.error('Error loading skills data:', err);
+    });
+  }
   loadJobDescriptionAndPrefill(jobDescriptionId: number): void {
     this.jobDescriptionService.getJobDescriptionById(jobDescriptionId).subscribe({
       next: (jobDescription) => {
         this.selectedJobDescription = jobDescription;
+        console.log('Job description loaded for prefill:', jobDescription);
         this.prefillFormFromJobDescription(jobDescription);
       },
       error: (err) => {
@@ -157,9 +178,32 @@ export class JobOfferComponent implements OnInit {
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       description += `**Compétences techniques requises :**\n`;
       jobDescription.requiredSkills.forEach(skill => {
-        // Gérer les différentes structures de données possibles
-        const skillName = skill.skill?.name || skill.Skill?.name || 'Compétence non définie';
-        const levelName = skill.skill_level?.level_name || skill.SkillLevel?.level_name || 'Niveau non défini';
+        // Gestion robuste des structures de données
+        let skillName = 'Compétence non définie';
+        let levelName = 'Niveau non défini';
+        
+        // Essayer différentes structures pour le nom de la compétence
+        if (skill.Skill?.name) {
+          skillName = skill.Skill.name;
+        } else if (skill.skill?.name) {
+          skillName = skill.skill.name;
+        } else if (skill.skill_id) {
+          // Fallback: chercher dans la liste des compétences
+          const foundSkill = this.skills.find(s => s.id === skill.skill_id);
+          if (foundSkill) skillName = foundSkill.name;
+        }
+        
+        // Essayer différentes structures pour le niveau
+        if (skill.SkillLevel?.level_name) {
+          levelName = skill.SkillLevel.level_name;
+        } else if (skill.skill_level?.level_name) {
+          levelName = skill.skill_level.level_name;
+        } else if (skill.required_skill_level_id) {
+          // Fallback: chercher dans la liste des niveaux
+          const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
+          if (foundLevel) levelName = foundLevel.level_name;
+        }
+        
         description += `• ${skillName} - Niveau ${levelName}\n`;
       });
       description += '\n';
@@ -173,6 +217,7 @@ export class JobOfferComponent implements OnInit {
       });
       description += '\n';
     }
+    
     // Pré-remplir le formulaire
     this.jobOfferForm.patchValue({
       title: title,
@@ -184,9 +229,30 @@ export class JobOfferComponent implements OnInit {
     this.clearFormArray(this.requirementsArray);
     if (jobDescription.requiredSkills && jobDescription.requiredSkills.length > 0) {
       jobDescription.requiredSkills.forEach(skill => {
-        // Gérer les différentes structures de données possibles
-        const skillName = skill.skill?.name || skill.Skill?.name || 'Compétence non définie';
-        const levelName = skill.skill_level?.level_name || skill.SkillLevel?.level_name || 'Niveau requis';
+        // Gestion robuste des structures de données
+        let skillName = 'Compétence non définie';
+        let levelName = 'Niveau requis';
+        
+        // Essayer différentes structures pour le nom de la compétence
+        if (skill.Skill?.name) {
+          skillName = skill.Skill.name;
+        } else if (skill.skill?.name) {
+          skillName = skill.skill.name;
+        } else if (skill.skill_id) {
+          const foundSkill = this.skills.find(s => s.id === skill.skill_id);
+          if (foundSkill) skillName = foundSkill.name;
+        }
+        
+        // Essayer différentes structures pour le niveau
+        if (skill.SkillLevel?.level_name) {
+          levelName = skill.SkillLevel.level_name;
+        } else if (skill.skill_level?.level_name) {
+          levelName = skill.skill_level.level_name;
+        } else if (skill.required_skill_level_id) {
+          const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
+          if (foundLevel) levelName = foundLevel.level_name;
+        }
+        
         const requirement = `${skillName} - Niveau ${levelName}`;
         this.addRequirement(requirement);
       });
@@ -251,7 +317,7 @@ export class JobOfferComponent implements OnInit {
         ...this.jobOfferForm.value,
         requirements: this.requirementsArray.value,
         benefits: this.benefitsArray.value,
-        created_by: 1, // TODO: Intégrer avec AuthService pour récupérer l'ID utilisateur
+        created_by: this.getCurrentUserId(),
         job_description_id: parseInt(this.jobOfferForm.value.job_description_id, 10)
       };
 
@@ -260,12 +326,13 @@ export class JobOfferComponent implements OnInit {
       // Créer l'offre d'emploi
       this.jobOfferService.createJobOffer(jobOfferData).subscribe({
         next: (createdOffer) => {
+          console.log('Job offer created successfully:', createdOffer);
           this.successMessage = 'Offre d\'emploi créée avec succès !';
           this.saving = false;
           
           // Rediriger vers la liste des offres après 2 secondes
           setTimeout(() => {
-            this.router.navigate(['/job-descriptions']);
+            this.router.navigate(['/job-offers']);
           }, 2000);
         },
         error: (err) => {
@@ -296,18 +363,19 @@ export class JobOfferComponent implements OnInit {
         ...this.jobOfferForm.value,
         requirements: this.requirementsArray.value,
         benefits: this.benefitsArray.value,
-        created_by: 1,
+        created_by: this.getCurrentUserId(),
         job_description_id: parseInt(this.jobOfferForm.value.job_description_id, 10),
         status: 'published'
       };
 
       this.jobOfferService.publishJobOfferToPublic(jobOfferData).subscribe({
         next: (publishedOffer) => {
+          console.log('Job offer published successfully:', publishedOffer);
           this.successMessage = 'Offre d\'emploi publiée avec succès !';
           this.saving = false;
           
           setTimeout(() => {
-            this.router.navigate(['/job-descriptions']);
+            this.router.navigate(['/job-offers']);
           }, 2000);
         },
         error: (err) => {
@@ -382,5 +450,44 @@ export class JobOfferComponent implements OnInit {
 
   applyLocationSuggestion(location: string): void {
     this.jobOfferForm.patchValue({ location });
+  }
+
+  // Méthodes utilitaires pour gérer les compétences
+  getSkillNameSafe(skill: any): string {
+    if (!skill) return 'Compétence non définie';
+    
+    // Essayer différentes structures
+    if (skill.Skill?.name) return skill.Skill.name;
+    if (skill.skill?.name) return skill.skill.name;
+    if (skill.name) return skill.name;
+    
+    // Fallback avec l'ID
+    if (skill.skill_id) {
+      const foundSkill = this.skills.find(s => s.id === skill.skill_id);
+      if (foundSkill) return foundSkill.name;
+    }
+    
+    return 'Compétence non définie';
+  }
+
+  getSkillLevelNameSafe(skill: any): string {
+    if (!skill) return 'Niveau non défini';
+    
+    // Essayer différentes structures
+    if (skill.SkillLevel?.level_name) return skill.SkillLevel.level_name;
+    if (skill.skill_level?.level_name) return skill.skill_level.level_name;
+    if (skill.level_name) return skill.level_name;
+    
+    // Fallback avec l'ID
+    if (skill.required_skill_level_id) {
+      const foundLevel = this.skillLevels.find(l => l.id === skill.required_skill_level_id);
+      if (foundLevel) return foundLevel.level_name;
+    }
+    
+    return 'Niveau non défini';
+  }
+
+  getCurrentUserId(): number {
+    return this.authService.currentUser?.id || 1;
   }
 }

@@ -14,10 +14,12 @@ const includeRelations = () => [
         include: [
           {
             model: Skill,
+            as: "Skill",
             attributes: ["id", "name"]
           },
           {
             model: SkillLevel,
+            as: "SkillLevel",
             attributes: ["id", "level_name", "value"]
           }
         ]
@@ -149,7 +151,26 @@ const createJobOffer = async (req, res) => {
     }
 
     // Vérifier que la fiche de poste existe
-    const jobDescription = await JobDescription.findByPk(job_description_id, { transaction: t });
+    const jobDescription = await JobDescription.findByPk(job_description_id, {
+      include: [
+        {
+          model: JobRequiredSkill,
+          as: "requiredSkills",
+          include: [
+            {
+              model: Skill,
+              attributes: ["id", "name"]
+            },
+            {
+              model: SkillLevel,
+              attributes: ["id", "level_name", "value"]
+            }
+          ]
+        }
+      ],
+      transaction: t
+    });
+    
     if (!jobDescription) {
       await t.rollback();
       return res.status(404).json({ message: "Fiche de poste non trouvée" });
